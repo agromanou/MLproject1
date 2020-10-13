@@ -70,7 +70,7 @@ def create_features(tX,top_vars):
     extra_features = np.hstack((squared, interactions))
     return extra_features
 
-def preprocessing(tX_train, y_train, tX_test):
+def preprocess(tX_train, y_train, tX_test):
     '''
     Fit and transform both datasets
     '''
@@ -87,7 +87,7 @@ def preprocessing(tX_train, y_train, tX_test):
     constant_ind = np.where(col_std==0)[0]
 
     tX_train = remove_constant_features(tX_train, constant_ind)
-    tX_test  = remove_constant_features(tX_test constant_ind)
+    tX_test  = remove_constant_features(tX_test, constant_ind)
 
     # Robust standarization & outliers
     q1= np.nanpercentile(tX_train, q = 25, axis=0)
@@ -97,7 +97,7 @@ def preprocessing(tX_train, y_train, tX_test):
 
     #Deal with outliers
     tX_train = replace_outliers(tX_train, q1,q3,IQR)
-    tX_test = replace_outliers(tX_train, q1,q3,IQR)
+    tX_test = replace_outliers(tX_test, q1,q3,IQR)
 
     # Robust standarization
     tX_train = standardize_robust(tX_train, median, IQR)
@@ -108,11 +108,11 @@ def preprocessing(tX_train, y_train, tX_test):
     tX_test, tX_test_imputed  = treat_missings(tX_test)
 
     # Concatenates imputed dummies with variables
-    top_vars = select_top_vars(tX_train,10)
-    extra_features_train = create_features(tX_train,top_vars)
-    tX_train = np.hstack((tX_train, extra_features_train, tX_train_imputed))
+    #top_vars = select_top_vars(tX_train,10)
+    #extra_features_train = create_features(tX_train,top_vars)
+    #tX_train = np.hstack((tX_train, extra_features_train, tX_train_imputed))
 
-    extra_features_test = create_features(tX_test,top_vars)
-    tX_test = np.hstack((tX_test, extra_features_test, tX_test_imputed))
+    #extra_features_test = create_features(tX_test,top_vars)
+    #tX_test = np.hstack((tX_test, extra_features_test, tX_test_imputed))
 
     return tX_train, tX_test
