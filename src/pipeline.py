@@ -1,9 +1,18 @@
 '''
 functions for pipeline
 '''
+from implementations import *
+from utils import *
+from proj1_helpers import *
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
+from sklearn.model_selection import GridSearchCV
 
 import numpy as np
 
+DATA_TRAIN_PATH = "./../data/raw/train.csv"
+DATA_TEST_PATH = "./../data/raw/test.csv"
 
 def fix_missings(tX):
     tX = np.where(tX == -999, np.NaN, tX)
@@ -30,7 +39,7 @@ def standardize_robust(tX, median, IQR):
 
 def treat_missings(tX):
     # Fill na with median (in this case is 0)
-    median = 0
+    median = np.zeros(tX.shape[1])
     inds = np.where(np.isnan(tX))
     tX[inds] = np.take(median, inds[1])
 
@@ -70,7 +79,7 @@ def create_features(tX,top_vars):
     extra_features = np.hstack((squared, interactions))
     return extra_features
 
-def preprocess(tX_train, y_train, tX_test):
+def preprocess(tX_train, tX_test):
     '''
     Fit and transform both datasets
     '''
@@ -115,4 +124,61 @@ def preprocess(tX_train, y_train, tX_test):
     #extra_features_test = create_features(tX_test,top_vars)
     #tX_test = np.hstack((tX_test, extra_features_test, tX_test_imputed))
 
-    return tX_train, tX_test
+    return tX_train, tX_test, tX_train_imputed, tX_test_imputed
+
+
+def pipeline():
+    tX_train, tX_test, tX_train_imputed, tX_test_imputed = preprocess(tX_train, tX_test)
+    create_features()
+
+def get_weights(tX_sub, y_sub):
+    '''
+    TODO
+    '''
+    tX_test,tX_train, y_test, y_train = split_data(tX_sub, y_sub, 0.1, myseed=1)
+    X_train, X_test, _, _ = preprocess(tX_train, tX_test)
+
+    # TODO: use our methods
+    # Cross validation
+    clf = LogisticRegression(max_iter = 1500)
+    clf.fit(X_train, y_train)
+
+    y_pred = clf.predict(X_test)
+    print(classification_report(y_test, y_pred))
+
+    w = clf.coef_[0]
+    return w
+
+
+def run_single_group(tX, y, tX_test, ids_test, group):
+    inds = np.where(tX[:,22]==group)
+    tX_sub = tX[inds]
+    y_sub = y[inds]
+
+    w = get_weights(tX_sub, y_sub)
+
+    inds = np.where(tX_test[:,22]==group)
+    tX_test_sub = tX_test[inds]
+    ids_test_sub = ids_test[inds]
+
+    _, tX_test_sub, _, _ = preprocess(tX_sub, tX_test_sub)
+
+    y_pred = predict_labels(w, tX_test_sub,1)
+
+    return ids_test_sub, y_pred
+
+
+def run_all_groups():
+    y, tX, ids = load_csv_data(DATA_TRAIN_PATH)
+    _, tX_test, ids_test = load_csv_data(DATA_TEST_PATH)
+
+    ids_test_sub_0, y_pred_0  = run_single_group(tX, y, tX_test, ids_test, 0)
+    ids_test_sub_1, y_pred_1  = run_single_group(tX, y, tX_test, ids_test, 1)
+    ids_test_sub_2, y_pred_2  = run_single_group(tX, y, tX_test, ids_test, 2)
+    ids_test_sub_3, y_pred_3  = run_single_group(tX, y, tX_test, ids_test, 3)
+
+    ids_all = np.concatenate((ids_test_sub_0,ids_test_sub_1,
+                            ids_test_sub_2,ids_test_sub_3), axis = 0)
+    preds_all = np.concatenate((y_pred_0,y_pred_1,y_pred_2,y_pred_3),axis = 0)
+
+    return ids_all, preds_all
