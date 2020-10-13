@@ -1,7 +1,7 @@
 '''
 functions for pipeline
 '''
-from implementations import *
+from imple2 import *
 from utils import *
 from proj1_helpers import *
 
@@ -51,20 +51,24 @@ def treat_missings(tX):
     return tX, tX_imputed
 
 def select_top_vars(tX, y, n=10):
-    '''
-    TODO
-    '''
-    # logistic regression vars alone
-    # order, return top 10
-    f1_scores = []
-    names = []
-    for i in range(tX.shape[0]):
-        f1 = logistic_regression(tX,y)
-        f1_scores.append(f1)
-    return names
+    initial_w =  np.zeros((tX.shape[1]))
+    w, loss = reg_logistic_regression(y, tX, 0.01, initial_w, 5000, 1e-6)
+    top_n_features = np.argsort(-abs(w))[:n]
+    return top_n_features
 
-def create_squared_features(tX):
-    return tX**2
+
+def create_poly_features(tX, degree):
+    tX_poly = build_poly(tX, 3)
+    tX_poly = np.delete(tX_poly, 0, 1)
+    return tX_poly
+
+def cross_terms(X, columns):
+    for col1 in columns:
+        for col2 in columns:
+            if col1 > col2:
+                col3 = np.multiply(X[:, col1], X[:, col2])
+                X = np.c_[X, col3]
+    return X
 
 def create_interactions(tX):
     '''
@@ -72,9 +76,10 @@ def create_interactions(tX):
     '''
     return tX**2
 
-def create_features(tX,top_vars):
-    top_tX = tX[:,top_vars]
-    squared =  create_squared_features(top_tX)
+def create_features(tX, degree. ):
+    tX_poly =  create_poly_features(tX, degree)
+
+
     interactions = create_interactions(top_tX)
     extra_features = np.hstack((squared, interactions))
     return extra_features
@@ -138,6 +143,13 @@ def get_weights(tX_sub, y_sub):
     tX_test,tX_train, y_test, y_train = split_data(tX_sub, y_sub, 0.1, myseed=1)
     X_train, X_test, _, _ = preprocess(tX_train, tX_test)
 
+
+    #features(6)
+
+    # hyperparameter search
+    # lambda, gamma
+
+
     # TODO: use our methods
     # Cross validation
     clf = LogisticRegression(max_iter = 1500)
@@ -150,18 +162,22 @@ def get_weights(tX_sub, y_sub):
     return w
 
 
-def run_single_group(tX, y, tX_test, ids_test, group):
+def run_single_group(tX, y, tX_test, ids_test, group, degree):
+    #TRAIN
     inds = np.where(tX[:,22]==group)
     tX_sub = tX[inds]
     y_sub = y[inds]
 
     w = get_weights(tX_sub, y_sub)
 
+    # TEST
     inds = np.where(tX_test[:,22]==group)
     tX_test_sub = tX_test[inds]
     ids_test_sub = ids_test[inds]
 
     _, tX_test_sub, _, _ = preprocess(tX_sub, tX_test_sub)
+    # features
+
 
     y_pred = predict_labels(w, tX_test_sub,1)
 
@@ -172,10 +188,10 @@ def run_all_groups():
     y, tX, ids = load_csv_data(DATA_TRAIN_PATH)
     _, tX_test, ids_test = load_csv_data(DATA_TEST_PATH)
 
-    ids_test_sub_0, y_pred_0  = run_single_group(tX, y, tX_test, ids_test, 0)
-    ids_test_sub_1, y_pred_1  = run_single_group(tX, y, tX_test, ids_test, 1)
-    ids_test_sub_2, y_pred_2  = run_single_group(tX, y, tX_test, ids_test, 2)
-    ids_test_sub_3, y_pred_3  = run_single_group(tX, y, tX_test, ids_test, 3)
+    ids_test_sub_0, y_pred_0  = run_single_group(tX, y, tX_test, ids_test, 0,3) #3
+    ids_test_sub_1, y_pred_1  = run_single_group(tX, y, tX_test, ids_test, 1,4) #4
+    ids_test_sub_2, y_pred_2  = run_single_group(tX, y, tX_test, ids_test, 2,3) #3
+    ids_test_sub_3, y_pred_3  = run_single_group(tX, y, tX_test, ids_test, 3,5) #5
 
     ids_all = np.concatenate((ids_test_sub_0,ids_test_sub_1,
                             ids_test_sub_2,ids_test_sub_3), axis = 0)
