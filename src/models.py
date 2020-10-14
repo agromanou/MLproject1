@@ -4,37 +4,34 @@
 Module description
 """
 import numpy as np
-from sklearn.linear_model import LogisticRegression
-from src.implementations import learning_by_penalized_gradient, penalized_logistic_regression
+from src.implementations import \
+    learning_by_penalized_gradient, \
+    penalized_logistic_regression, \
+    calculate_loss_log
 
 
 class Model:
 
-    def __init__(self, tx, y):
-        self.tx = tx
-        self.y = y
+    def __init__(self, tx_train, y_train, tx_val, y_val):
+        self.tx_train = tx_train
+        self.y_train = y_train
+
+        self.tx_val = tx_val
+        self.y_val = y_val
 
         self.w = None
         self.lambda_ = None
 
-    def fit(self, gamma, initial_w, lambda_=0, max_iter=1000, folds=0):
+    def fit(self, gamma, initial_w, lambda_=0, epochs=1000):
         """
         Fit the model to the data
 
         :param gamma:
         :param initial_w:
         :param lambda_:
-        :param max_iter:
-        :param folds:
+        :param epochs:
         :return:
         """
-
-        # TODO: cross validation
-        tx_train = self.tx[:80]
-        tx_val = self.tx[80:100]
-
-        y_train = self.y[:80]
-        y_val = self.y[80:100]
 
         loss_train = list()
         loss_val = list()
@@ -43,17 +40,17 @@ class Model:
         w = initial_w
         self.lambda_ = lambda_
 
-        for n_iter in range(max_iter):
+        for epoch in range(epochs):
 
-            loss, w = learning_by_penalized_gradient(y_train, tx_train, w, gamma, lambda_)
+            loss, w = learning_by_penalized_gradient(self.y_train, self.tx_train, w, gamma, lambda_)
+            val_loss = calculate_loss_log(self.y_val, self.tx_val, w)
 
             ws.append(w)
             loss_train.append(loss)
+            loss_val.append(val_loss)
 
-            # TODO: apply w to val set
-
-            print("Gradient Descent({bi}/{ti}): training-loss={loss}".format(
-                bi=n_iter, ti=max_iter - 1, loss=loss))
+            print("Gradient Descent({epoch}/{epochs}): training-loss={loss} | validation-loss={val_loss}".format(
+                epoch=epoch, epochs=epochs - 1, loss=loss, val_loss=val_loss))
 
         self.w = w
 

@@ -11,6 +11,7 @@ from src.data_loader import DataLoader
 from src.preprocessing import *
 from src.models import *
 from src.visualizations import plot_errors
+from src.utils import build_k_indices
 
 
 def settings_combinations(search_space):
@@ -33,7 +34,7 @@ def main(param1, param2):
 
     # split data into 4 groups based on their value in the `jet` feature
     for label in group_labels:
-        y_, tx_, ids_ = get_jet_data_split(data_obj.y, data_obj.tx, data_obj.ids, label)
+        y_, tx_ = get_jet_data_split(data_obj.y, data_obj.tx, label)
 
         print('\nJet: {}'.format(label))
         print('Original shape: {}'.format(tx_.shape))
@@ -51,11 +52,8 @@ def main(param1, param2):
         groups[str(label)] = {
             'y': y_,
             'tx': tx_,
-            'ids': ids_,
             'imputed': tx_imputed
         }
-
-    print(groups.keys())
 
     model_parameters = {
         'penalty': ['l1', 'l2', 'elasticnet'],
@@ -78,27 +76,43 @@ def main(param1, param2):
         penalty = model_setting[1]
         model_class = model_setting[2]
         l1_ratio = model_setting[3]
+        folds = 5
 
+        # Run for only one jet
         tx = groups['0']['tx']
         y = groups['0']['y']
 
-        model = model_class(tx, y)  # instantiate model object
-        initial_w = np.zeros(tx.shape[1])  # initiate the weights
+        # Run cross-validation
+        k_indices = build_k_indices(y, folds)
+        for k in range(folds):
+            # Create indices for the train and validation sets
+            val_indice = k_indices[k]
+            tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)]
+            tr_indice = tr_indice.reshape(-1)
 
-        # Training
-        start_time = datetime.datetime.now()
-        training_error, validation_error = model.fit(gamma=gamma, initial_w=initial_w)
-        execution_time = (datetime.datetime.now() - start_time).total_seconds()
+            x_train = tx[tr_indice]
+            x_val = tx[val_indice]
+            y_train = y[tr_indice]
+            y_val = y[val_indice]
 
-        print("Gradient Descent: execution time={t:.3f} seconds".format(t=execution_time))
+            model = model_class(x_train, y_train, x_val, y_val)  # instantiate model object
+            initial_w = np.zeros(x_train.shape[1])  # initiate the weights
 
-        # Plotting
-        plot_errors(loss_train=training_error, loss_val=validation_error)
+            # Training
+            start_time = datetime.datetime.now()
+            training_error, validation_error = model.fit(gamma=gamma, initial_w=initial_w)
+            execution_time = (datetime.datetime.now() - start_time).total_seconds()
 
+            print("Gradient Descent: execution time={t:.3f} seconds".format(t=execution_time))
+
+            # Plotting
+            plot_errors(loss_train=training_error, loss_val=validation_error)
+
+            break
         break
 
     # Evaluation on unseen data
-    #test_labelled_error = model.score(data_obj.tx_te, data_obj.y_te)
+    # test_labelled_error = model.score(data_obj.tx_te, data_obj.y_te)
 
 
 if __name__ == '__main__':

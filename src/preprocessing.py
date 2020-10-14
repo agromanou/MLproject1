@@ -6,7 +6,7 @@ Module description
 import numpy as np
 
 
-def get_jet_data_split(y, tx, ids, jet_num):
+def get_jet_data_split(y, tx, jet_num):
     """
     Splits the given data set such that only the data points with a certain
     jet number remains, where jet number is a discrete valued feature. In
@@ -14,7 +14,6 @@ def get_jet_data_split(y, tx, ids, jet_num):
 
     :param y: a numpy array representing the given labels
     :param tx: a numpy array representing the given features
-    :param ids: a numpy array representing the ids of the data points
     :param jet_num: the certain value of the discrete feature jet number
     :return:
         y_masked: numpy array of labels of data points having the specified jet number
@@ -22,7 +21,7 @@ def get_jet_data_split(y, tx, ids, jet_num):
         ids_masked: numpy array of ids of data points having the specified jet number
     """
     mask = tx[:, 22] == jet_num
-    return y[mask], tx[mask], ids[mask]
+    return y[mask], tx[mask]
 
 
 def remove_empty_features(tx):
