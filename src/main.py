@@ -98,7 +98,7 @@ def main(param1, param2):
         break
 
     # Evaluation on unseen data
-    # test_labelled_error = model.score(tx, y)
+    #test_labelled_error = model.score(data_obj.tx_te, data_obj.y_te)
 
 
 if __name__ == '__main__':

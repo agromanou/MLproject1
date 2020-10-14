@@ -12,7 +12,7 @@ from src import DATA_DIR
 class DataLoader:
 
     def __init__(self, sub_sample=0):
-        self.tx, self.y, self.test, self.ids = self._load_data(sub_sample)
+        self.tx, self.y, self.tx_te, self.y_te, self.test, self.ids = self._load_data(sub_sample)
 
     def get_datasets(self):
         """
@@ -24,6 +24,10 @@ class DataLoader:
                 'tx': self.tx,
                 'y': self.y
             },
+            'test_labeled': {
+                'tx_te': self.tx_te,
+                'y_te': self.y_te
+            },
             'test': {
                 'tx': self.test,
             },
@@ -31,8 +35,7 @@ class DataLoader:
 
         return data
 
-    @staticmethod
-    def _load_data(sub_sample=0):
+    def _load_data(self, sub_sample=0):
         """
         Loads the train and test data needed.
 
@@ -59,8 +62,10 @@ class DataLoader:
             yb = yb[::50]
             tx = tx[::50]
             ids = ids[::50]
+        
+        tx, tx_te, yb, yb_te = self.split_data(tx, yb, 0.9)
 
-        return tx, yb, test, ids
+        return tx, yb, tx_te, yb_te, test, ids
 
     def compute_statistics(self):
         """
@@ -68,3 +73,21 @@ class DataLoader:
         :return:
         """
         pass
+
+    @staticmethod
+    def split_data(x, y, ratio, myseed=1):
+        """split the dataset based on the split ratio."""
+        # set seed
+        np.random.seed(myseed)
+        # generate random indices
+        num_row = len(y)
+        indices = np.random.permutation(num_row)
+        index_split = int(np.floor(ratio * num_row))
+        index_tr = indices[: index_split]
+        index_te = indices[index_split:]
+        # create split
+        x_tr = x[index_tr]
+        x_te = x[index_te]
+        y_tr = y[index_tr]
+        y_te = y[index_te]
+        return x_tr, x_te, y_tr, y_te
