@@ -17,7 +17,7 @@ class Model:
         self.w = None
         self.lambda_ = None
 
-    def fit(self, gamma, initial_w, lambda_=0, max_iter=100, folds=0):
+    def fit(self, gamma, initial_w, lambda_=0, max_iter=1000, folds=0):
         """
         Fit the model to the data
 

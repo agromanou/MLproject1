@@ -5,6 +5,7 @@ commenting style: https://www.programiz.com/python-programming/docstrings
 '''
 import numpy as np
 
+
 # Gradients
 def compute_gradient(y, tx, w):
     """Compute the gradient."""
@@ -12,11 +13,13 @@ def compute_gradient(y, tx, w):
     grad = -tx.T.dot(err) / len(err)
     return grad, err
 
+
 def compute_stoch_gradient(y, tx, w):
     """Compute a stochastic gradient for batch data."""
     err = y - tx.dot(w)
     grad = -tx.T.dot(err) / len(err)
     return grad, err
+
 
 def calculate_gradient_log(y, tx, w):
     """compute the gradient of loss."""
@@ -24,7 +27,7 @@ def calculate_gradient_log(y, tx, w):
     grad = tx.T.dot(pred - y)
     return grad
 
-# Loss
+
 def calculate_mse(e):
     """Calculate the mse for vector e."""
     return 1/2*np.mean(e**2)
@@ -56,6 +59,7 @@ def calculate_loss_log(y, tx, w):
     loss = y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
     return np.squeeze(- loss)
 
+
 def learning_by_gradient_descent(y, tx, w, gamma):
     """
     Do one step of gradient descen using logistic regression.
@@ -66,12 +70,14 @@ def learning_by_gradient_descent(y, tx, w, gamma):
     w -= gamma * grad
     return loss, w
 
+
 def penalized_logistic_regression(y, tx, w, lambda_):
     """return the loss and gradient."""
     num_samples = y.shape[0]
     loss = calculate_loss_log(y, tx, w) + lambda_ * np.squeeze(w.T.dot(w))
     gradient = calculate_gradient_log(y, tx, w) + 2 * lambda_ * w
     return loss, gradient
+
 
 def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
     """
@@ -81,9 +87,6 @@ def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
     loss, gradient = penalized_logistic_regression(y, tx, w, lambda_)
     w -= gamma * gradient
     return loss, w
-
-
-
 
 
 def least_squares_GD(y, tx, initial_w, max_iters, gamma):
@@ -159,6 +162,7 @@ def least_squares_SGD(y, tx, initial_w, max_iters, gamma):
     w = ws[-1]
     return w, loss
 
+
 def least_squares(y, tx):
     '''
     least squares regression using normal equations
@@ -197,6 +201,7 @@ def ridge_regression(y, tx, lambda_):
     w =  np.linalg.solve(a, b)
     loss = compute_loss(y, tx, w)
     return w, loss
+
 
 def logistic_regression(y, tx, initial_w, max_iters, gamma):
     '''
