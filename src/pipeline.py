@@ -50,7 +50,7 @@ def treat_missings(tX):
 
     return tX, tX_imputed
 
-def select_top_vars(tX, y, n=10):
+def select_top_vars(tX, y, n=5):
     initial_w =  np.zeros((tX.shape[1]))
     w, loss = reg_logistic_regression(y, tX, 0.01, initial_w, 5000, 1e-6)
     top_n_features = np.argsort(-abs(w))[:n]
@@ -62,7 +62,7 @@ def create_poly_features(tX, degree):
     tX_poly = np.delete(tX_poly, 0, 1)
     return tX_poly
 
-def cross_terms(X, columns):
+def create_interactions(X, columns):
     for col1 in columns:
         for col2 in columns:
             if col1 > col2:
@@ -70,19 +70,16 @@ def cross_terms(X, columns):
                 X = np.c_[X, col3]
     return X
 
-def create_interactions(tX):
-    '''
-    TODO
-    '''
-    return tX**2
-
-def create_features(tX, degree. ):
+def create_features_train(tX, y, degree):
     tX_poly =  create_poly_features(tX, degree)
+    top_tX = select_top_vars(tX, y)
+    interactions = create_interactions(tX_poly, top_tX)
+    return interactions, top_tX
 
-
-    interactions = create_interactions(top_tX)
-    extra_features = np.hstack((squared, interactions))
-    return extra_features
+def create_features_test(tX, degree, top_tX):
+    tX_poly =  create_poly_features(tX, degree)
+    interactions = create_interactions(tX_poly, top_tX)
+    return interactions
 
 def preprocess(tX_train, tX_test):
     '''
@@ -121,31 +118,16 @@ def preprocess(tX_train, tX_test):
     tX_train, tX_train_imputed  = treat_missings(tX_train)
     tX_test, tX_test_imputed  = treat_missings(tX_test)
 
-    # Concatenates imputed dummies with variables
-    #top_vars = select_top_vars(tX_train,10)
-    #extra_features_train = create_features(tX_train,top_vars)
-    #tX_train = np.hstack((tX_train, extra_features_train, tX_train_imputed))
-
-    #extra_features_test = create_features(tX_test,top_vars)
-    #tX_test = np.hstack((tX_test, extra_features_test, tX_test_imputed))
-
     return tX_train, tX_test, tX_train_imputed, tX_test_imputed
 
 
-def pipeline():
-    tX_train, tX_test, tX_train_imputed, tX_test_imputed = preprocess(tX_train, tX_test)
-    create_features()
-
-def get_weights(tX_sub, y_sub):
+def train_model(tX_sub, y_sub, degree):
     '''
     TODO
     '''
     tX_test,tX_train, y_test, y_train = split_data(tX_sub, y_sub, 0.1, myseed=1)
     X_train, X_test, _, _ = preprocess(tX_train, tX_test)
-
-
-    #features(6)
-
+    X_train , top_tX =  create_features_train(X_train, y_train, degree)
     # hyperparameter search
     # lambda, gamma
 
@@ -155,11 +137,12 @@ def get_weights(tX_sub, y_sub):
     clf = LogisticRegression(max_iter = 1500)
     clf.fit(X_train, y_train)
 
+    X_test = create_features_test(X_test, degree, top_tX)
     y_pred = clf.predict(X_test)
     print(classification_report(y_test, y_pred))
 
     w = clf.coef_[0]
-    return w
+    return w, top_tX
 
 
 def run_single_group(tX, y, tX_test, ids_test, group, degree):
@@ -168,7 +151,7 @@ def run_single_group(tX, y, tX_test, ids_test, group, degree):
     tX_sub = tX[inds]
     y_sub = y[inds]
 
-    w = get_weights(tX_sub, y_sub)
+    w,  top_tX = train_model(tX_sub, y_sub, degree)
 
     # TEST
     inds = np.where(tX_test[:,22]==group)
@@ -176,9 +159,7 @@ def run_single_group(tX, y, tX_test, ids_test, group, degree):
     ids_test_sub = ids_test[inds]
 
     _, tX_test_sub, _, _ = preprocess(tX_sub, tX_test_sub)
-    # features
-
-
+    tX_test_sub = create_features_test(tX_test_sub, degree, top_tX)
     y_pred = predict_labels(w, tX_test_sub,1)
 
     return ids_test_sub, y_pred
