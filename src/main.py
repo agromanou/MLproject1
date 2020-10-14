@@ -12,6 +12,7 @@ from src.preprocessing import *
 from src.models import *
 from src.visualizations import plot_errors
 from src.utils import build_k_indices
+from src.evaluation import Evaluation
 
 
 def settings_combinations(search_space):
@@ -56,10 +57,10 @@ def main(param1, param2):
         }
 
     model_parameters = {
-        'penalty': ['l1', 'l2', 'elasticnet'],
+        # 'penalty': ['l1', 'l2', 'elasticnet'],
         'gamma': [0.001, 0.1, 0.5, 1, 2, 10],
         'l1_ratio': [0.25, 0.5, 0.75],
-        'model': [Model]
+        'model': [Model],
     }
 
     # get all the possible combinations of settings
@@ -67,16 +68,19 @@ def main(param1, param2):
 
     print('\nHyper-parameter will run for {} model settings'.format(len(model_settings)))
 
+    best_model = {
+        'f1': 0
+    }
     for model_setting in model_settings:  # loop for mode hyper-parameter tuning
 
         print('Current setting running: {}'.format(model_setting))
 
         # Training
         gamma = model_setting[0]
-        penalty = model_setting[1]
+        l1_ratio = model_setting[1]
         model_class = model_setting[2]
-        l1_ratio = model_setting[3]
         folds = 5
+        f1_sum = 0
 
         # Run for only one jet
         tx = groups['0']['tx']
@@ -90,10 +94,10 @@ def main(param1, param2):
             tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)]
             tr_indice = tr_indice.reshape(-1)
 
-            x_train = tx[tr_indice]
-            x_val = tx[val_indice]
-            y_train = y[tr_indice]
-            y_val = y[val_indice]
+            x_train = tx[tr_indice][:1000]
+            x_val = tx[val_indice][:500]
+            y_train = y[tr_indice][:1000]
+            y_val = y[val_indice][:500]
 
             model = model_class(x_train, y_train, x_val, y_val)  # instantiate model object
             initial_w = np.zeros(x_train.shape[1])  # initiate the weights
@@ -108,13 +112,23 @@ def main(param1, param2):
             # Plotting
             plot_errors(loss_train=training_error, loss_val=validation_error)
 
-            break
-        break
+            # evaluation of validation
+            pred = (model.predict(x_val) >= 1/2).astype(int)
 
-    # Evaluation on unseen data
-    # test_labelled_error = model.score(data_obj.tx_te, data_obj.y_te)
+            eval_obj = Evaluation(y, pred)
+            f1_sum += eval_obj.get_f1()
+
+        avg_f1 = f1_sum / folds
+
+        if best_model['f1'] < avg_f1:
+            best_model['f1'] = avg_f1
+            best_model['gamma'] = gamma
+            best_model['l1_ratio'] = l1_ratio
+            best_model['folds'] = folds
+
+    print('\nBest model:')
+    print(best_model)
 
 
 if __name__ == '__main__':
     main()
-

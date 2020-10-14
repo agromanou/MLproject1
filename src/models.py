@@ -7,7 +7,8 @@ import numpy as np
 from src.implementations import \
     learning_by_penalized_gradient, \
     penalized_logistic_regression, \
-    calculate_loss_log
+    calculate_loss_log, \
+    sigmoid
 
 
 class Model:
@@ -22,7 +23,7 @@ class Model:
         self.w = None
         self.lambda_ = None
 
-    def fit(self, gamma, initial_w, lambda_=0, epochs=1000):
+    def fit(self, gamma, initial_w, lambda_=0, epochs=10, verbose=False):
         """
         Fit the model to the data
 
@@ -30,6 +31,7 @@ class Model:
         :param initial_w:
         :param lambda_:
         :param epochs:
+        :param verbose:
         :return:
         """
 
@@ -49,8 +51,9 @@ class Model:
             loss_train.append(loss)
             loss_val.append(val_loss)
 
-            print("Gradient Descent({epoch}/{epochs}): training-loss={loss} | validation-loss={val_loss}".format(
-                epoch=epoch, epochs=epochs - 1, loss=loss, val_loss=val_loss))
+            if verbose:
+                print("Gradient Descent({epoch}/{epochs}): training-loss={loss} | validation-loss={val_loss}".format(
+                    epoch=epoch, epochs=epochs - 1, loss=loss, val_loss=val_loss))
 
         self.w = w
 
@@ -63,8 +66,8 @@ class Model:
         loss, _ = penalized_logistic_regression(y, tx, self.w, self.lambda_)
         return loss
 
-    def predict(self, x_test):
-        raise NotImplementedError('Not implemented')
+    def predict(self, tx):
+        return sigmoid(tx.dot(self.w))
 
     def compute_test_loss(self):
         pass

@@ -51,12 +51,3 @@ class Evaluation:
         tn = self.get_true_negatives()
         fn = self.get_false_negatives()
         return (tp + tn) / (tp + tn + fp + fn)
-
-
-
-import pandas as pd
-y_pred=pd.read_csv('data/y_pred.csv', sep=',',header=None)
-y_pred = y_pred.to_numpy()
-
-y_ac=pd.read_csv('data/y_test.csv', sep=',',header=None)
-y_ac = y_ac.to_numpy()
