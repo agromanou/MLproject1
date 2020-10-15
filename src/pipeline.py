@@ -5,6 +5,7 @@ from imple2 import *
 from utils import *
 from proj1_helpers import *
 
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report
 from sklearn.model_selection import GridSearchCV
@@ -70,9 +71,9 @@ def create_interactions(X, columns):
                 X = np.c_[X, col3]
     return X
 
-def create_features_train(tX, y, degree):
+def create_features_train(tX, y, degree, num_top_vars):
     tX_poly =  create_poly_features(tX, degree)
-    top_tX = select_top_vars(tX, y)
+    top_tX = select_top_vars(tX, y, num_top_vars)
     interactions = create_interactions(tX_poly, top_tX)
     return interactions, top_tX
 
@@ -121,13 +122,167 @@ def preprocess(tX_train, tX_test):
     return tX_train, tX_test, tX_train_imputed, tX_test_imputed
 
 
-def train_model(tX_sub, y_sub, degree):
+
+
+
+def tune_hyperparameters(X_train, y_train):
+    degrees_list = [1,2,3,4,5,6,7,8]
+    features_list = [3,4,5,6,7,8,9,10]
+    c_list =  [0.001, 0.1, 0.5, 1, 2, 10]
+    gamma_list = [0.001, 0.1, 0.5, 1, 2, 10]
+    results_list = []
+
+    for degree in degrees_list:
+        for features in features_list:
+            for c in c_list:
+                for gamma in gamma_list:
+                    f1_mean, f1_std, acc_mean, acc_std = \
+                            cross_validation(X_train, y_train degree, features, c, gamma)
+                    results = [degree, features, c, gamma,f1_mean,
+                                        f1_std, acc_mean, acc_std]
+                    results_list.append(results)
+
+    return np.array(results_list)
+
+def train_model_gs(tX_sub, y_sub, jet_number=0):
+    X_test, X_train, y_test, y_train = split_data(tX, y, 0.1, myseed=1)
+
+    results_list = tune_hyperparameters(X_train, y_train)
+
+    # Save results list
+    # TO CSV
+
+    ## CHOSE BEST HYPERPARAMETERS
+    top_row = np.argmax(results_gs[:,4])
+    best_params = results_gs[top_row]
+
+    ## RUN WITH BEST HYPERPARAMETRS
+    degree = best_params[0]
+    num_top_vars =  best_params[1]
+    lambda_ = best_params[2]
+    gamma = best_params[3]
+
+    w = run_fit(X_train, y_test, y_train , degree,
+                    num_top_vars, lambda_, gamma)
+
+    ## MAKE PREDICTIONS
+    return w,  num_top_vars, degree
+
+
+
+def visualize_generalization():
+    top_row = np.argmax(results_gs[:,4])
+    best_params = results_gs[top_row]
+
+    ## RUN WITH BEST HYPERPARAMETRS
+    degree = best_params[0]
+    num_top_vars =  best_params[1]
+    lambda_ = best_params[2]
+    gamma = best_params[3]
+
+
+def run_single_group_gs(tX, y, tX_test, ids_test, group, degree):
+    #TRAIN
+    inds = np.where(tX[:,22]==group)
+    tX_sub = tX[inds]
+    y_sub = y[inds]
+
+    w,  top_tX, degree = train_model_gs(tX_sub, y_sub)
+
+    # TEST
+    inds = np.where(tX_test[:,22]==group)
+    tX_test_sub = tX_test[inds]
+    ids_test_sub = ids_test[inds]
+
+    _, tX_test_sub, _, _ = preprocess(tX_sub, tX_test_sub)
+    tX_test_sub = create_features_test(tX_test_sub, degree, top_tX)
+    y_pred = predict_labels(w, tX_test_sub,1)
+
+    return ids_test_sub, y_pred
+
+
+def cross_validation(tX_sub, y_sub, degree, num_top_vars, lambda_, gamma, folds=5):
+    f1_scores = []
+    accuracy_scores = []
+    for i in range(folds):
+        X_test,X_train, y_test, y_train = split_data_fold(tX_sub, y_sub, myseed=1)
+        # GET DATA FROM FOLD
+        y_pred, _ =  run_pipeline(X_test, X_train, y_test, y_train , degree,
+                                num_top_vars, lambda_, gamma)
+        f1, accuracy = calculate_scores(y_test, y_pred)
+        f1_scores.append(f1)
+        accuracy_scores.append(accuracy)
+
+    return np.mean(f1_score), np.std(f1_score), np.mean(accuracy), np.std(accuracy)
+
+
+def calculate_scores(y_test, y_pred):
+    #George
+    return 0
+
+def run_fit(X_train, y_train , degree,
+                num_top_vars, lambda_, gamma, max_iters=1):
+
+    tX_train = fix_missings(tX_train)
+    tX_train = remove_empty_features(tX_train)
+
+    # Our own transformer. fit
+    col_std = np.nanstd(tX_train, axis=0)
+    constant_ind = np.where(col_std==0)[0]
+
+    tX_train = remove_constant_features(tX_train, constant_ind)
+
+    # Robust standarization & outliers
+    q1= np.nanpercentile(tX_train, q = 25, axis=0)
+    median =  np.nanpercentile(tX_train, q = 50, axis=0)
+    q3 =  np.nanpercentile(tX_train, q = 75, axis=0)
+    IQR = q3 - q1
+
+    #Deal with outliers
+    tX_train = replace_outliers(tX_train, q1,q3,IQR)
+
+    # Robust standarization
+    tX_train = standardize_robust(tX_train, median, IQR)
+
+    # Fill na with median (in this case is 0)
+    tX_train, tX_train_imputed  = treat_missings(tX_train)
+
+    #Features
+    X_train =  create_features_test(X_train, degree, num_top_vars)
+
+    # Modelling
+    initial_w = np.zeros((tX.shape[1]))
+    w, loss = reg_logistic_regression(y_train, X_train, lambda_,
+                                    initial_w, max_iters, gamma)
+
+    return w
+
+
+def run_pipeline(X_test, X_train, y_test, y_train , degree,
+                num_top_vars, lambda_, gamma, max_iters=1):
+    #Cleaning
+    X_train, X_test, _, _ = preprocess(X_train, X_test)
+
+    #Features
+    X_train , top_tX =  create_features_train(X_train, y_train,
+                                            degree, num_top_vars)
+    X_test = create_features_test(X_test, degree, top_tX)
+
+    # Modelling
+    initial_w = np.zeros((tX.shape[1]))
+    w, loss = reg_logistic_regression(y_train, tX_train, lambda_,
+                                    initial_w, max_iters, gamma)
+    y_pred = predict_labels(w, X_test)
+
+    return y_pred
+
+def train_model(tX_sub, y_sub, degree,num_top_vars):
     '''
     TODO
     '''
     tX_test,tX_train, y_test, y_train = split_data(tX_sub, y_sub, 0.1, myseed=1)
     X_train, X_test, _, _ = preprocess(tX_train, tX_test)
-    X_train , top_tX =  create_features_train(X_train, y_train, degree)
+    X_train , top_tX =  create_features_train(X_train, y_train, degree, num_top_vars)
     # hyperparameter search
     # lambda, gamma
 
