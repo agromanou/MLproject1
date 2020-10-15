@@ -57,8 +57,9 @@ def main(param1, param2):
         }
 
     model_parameters = {
-        'gamma': [0.001, 0.1, 0.5, 1, 2, 10],
-        'l1_ratio': [0.25, 0.5, 0.75],
+        'folds': [5, 10],
+        'gamma': [0.0000001, 0.000001, 0.00001, 0.0001],
+        'lambda': [0.0000001, 0.000001, 0.00001, 0.0001],
     }
 
     # get all the possible combinations of settings
@@ -66,17 +67,15 @@ def main(param1, param2):
 
     print('\nHyper-parameter will run for {} model settings'.format(len(model_settings)))
 
-    best_model = {
-        'f1': 0
-    }
+    best_model = {'f1': 0}
     for model_setting in model_settings:  # loop for mode hyper-parameter tuning
 
         print('Current setting running: {}'.format(model_setting))
 
         # Training
-        gamma = model_setting[0]
-        l1_ratio = model_setting[1]
-        folds = 5
+        folds = model_setting[0]
+        gamma = model_setting[1]
+        lambda_ = model_setting[2]
         f1_sum = 0
 
         # Run for only one jet
@@ -91,17 +90,20 @@ def main(param1, param2):
             tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)]
             tr_indice = tr_indice.reshape(-1)
 
-            x_train = tx[tr_indice][:1000]
-            x_val = tx[val_indice][:500]
-            y_train = y[tr_indice][:1000]
-            y_val = y[val_indice][:500]
+            x_train = tx[tr_indice]
+            x_val = tx[val_indice]
+            y_train = y[tr_indice]
+            y_val = y[val_indice]
 
             model = LogisticRegression(x_train, y_train, x_val, y_val)  # instantiate model object
             initial_w = np.zeros(x_train.shape[1])  # initiate the weights
 
             # Training
             start_time = datetime.datetime.now()
-            training_error, validation_error = model.fit(gamma=gamma, initial_w=initial_w, verbose=True)
+            training_error, validation_error = model.fit(initial_w=initial_w,
+                                                         gamma=gamma,
+                                                         lambda_=lambda_,
+                                                         verbose=False)
             execution_time = (datetime.datetime.now() - start_time).total_seconds()
 
             print("Gradient Descent: execution time={t:.3f} seconds".format(t=execution_time))
@@ -120,10 +122,8 @@ def main(param1, param2):
         if best_model['f1'] < avg_f1:
             best_model['f1'] = avg_f1
             best_model['gamma'] = gamma
-            best_model['l1_ratio'] = l1_ratio
+            best_model['lambda'] = lambda_
             best_model['folds'] = folds
-
-        break
 
     print('\nBest model:')
     print(best_model)

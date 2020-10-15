@@ -26,7 +26,7 @@ class LogisticRegression:
         self.w = None
         self.lambda_ = None
 
-    def fit(self, gamma, initial_w, lambda_=0, epochs=10, verbose=False):
+    def fit(self, gamma, initial_w, lambda_=0, epochs=100, verbose=False):
         """
         Fit the model to the data.
 
