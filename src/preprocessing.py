@@ -48,25 +48,6 @@ def remove_constant_features(tx):
     return np.delete(tx, constant_ind, axis=1)
 
 
-def replace_outliers(tx, q1, q3, median):
-    IQR = q3 - q1
-    outliers = np.where(tx > q3 + 1.5 * IQR)
-    tx[outliers] = np.take(q3 + 1.5 * IQR, outliers[1])
-    outliers = np.where(tx < q1 - 1.5 * IQR)
-    tx[outliers] = np.take(q1 + 1.5 * IQR, outliers[1])
-
-    return (tx - median) / IQR
-
-
-def standardization(tx):
-    # Robust standardization & outliers
-    q1 = np.nanpercentile(tx, q=25, axis=0)
-    median = np.nanpercentile(tx, q=50, axis=0)
-    q3 = np.nanpercentile(tx, q=75, axis=0)
-
-    return q1, q3, median
-
-
 def treat_missing_data(tx):
     # Fill na with median (in this case is 0)
     median = np.zeros(tx.shape[1])
@@ -79,3 +60,36 @@ def treat_missing_data(tx):
     tX_imputed[inds] = np.take(array_one, inds[1])
 
     return tx, tX_imputed
+
+
+class Standardization:
+    def __init__(self):
+        self.q1 = None
+        self.q3 = None
+        self.median = None
+
+    def fit(self, tx):
+        """
+        It computes the percentiles and the median for the given data sample.
+
+        :param tx: np.array, with the data
+        """
+        # Robust standardization & outliers
+        self.q1 = np.nanpercentile(tx, q=25, axis=0)
+        self.median = np.nanpercentile(tx, q=50, axis=0)
+        self.q3 = np.nanpercentile(tx, q=75, axis=0)
+
+    def transform(self, tx):
+        """
+
+        :param tx: np.array, with the data
+        :return: np.array with the standardized data
+        """
+        iqr = self.q3 - self.q1
+
+        outliers = np.where(tx > self.q3 + 1.5 * iqr)
+        tx[outliers] = np.take(self.q3 + 1.5 * iqr, outliers[1])
+        outliers = np.where(tx < self.q1 - 1.5 * iqr)
+        tx[outliers] = np.take(self.q1 + 1.5 * iqr, outliers[1])
+
+        return (tx - self.median) / iqr

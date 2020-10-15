@@ -23,6 +23,14 @@ def settings_combinations(search_space):
 
 
 def model_selection(tx, y, jet, verbose=False):
+    """
+
+    :param tx:
+    :param y:
+    :param jet:
+    :param verbose:
+    :return:
+    """
     model_parameters = {
         'folds': [5, 10],
         'gamma': [0.0000001, 0.000001, 0.00001, 0.0001],
@@ -86,7 +94,7 @@ def model_selection(tx, y, jet, verbose=False):
 
         avg_f1 = f1_sum / folds
 
-        print('Avg F1 score on these settings: {f1}'.format(f1=avg_f1)) if verbose else None
+        print('Avg F1 score on these settings: {f1:.4f}'.format(f1=avg_f1)) if verbose else None
 
         if best_model['f1'] < avg_f1:
             best_model['f1'] = avg_f1
@@ -100,7 +108,8 @@ def model_selection(tx, y, jet, verbose=False):
 
 @click.command()
 @click.option('-j', '--jet', required=False, default=-1)
-def main(jet):
+@click.option('-v', '--verbose', required=False, default=False)
+def main(jet, verbose):
 
     # Load the data
     data_obj = DataLoader()
@@ -121,16 +130,19 @@ def main(jet):
         tx = remove_empty_features(tx)  # remove empty features
         tx = remove_constant_features(tx)  # remove constant features
 
-        # treat outliers & missing data
-        q1, q3, median = standardization(tx)
-        tx = replace_outliers(tx, q1, q3, median)
+        # treat outliers
+        standardization = Standardization()
+        standardization.fit(tx)
+        tx = standardization.transform(tx)
+
+        # treat missing data
         tx, tx_imputed = treat_missing_data(tx)
 
         print('Final shape: {}'.format(tx.shape))
 
         print('\nRUNNING MODEL SELECTION FOR JET {jet}'.format(jet=jet))
 
-        model_selection(tx, y, jet, verbose=False)
+        model_selection(tx, y, jet, verbose=verbose)
 
 
 if __name__ == '__main__':
