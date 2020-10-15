@@ -74,6 +74,9 @@ def learning_by_gradient_descent(y, tx, w, gamma):
 def penalized_logistic_regression(y, tx, w, lambda_):
     """return the loss and gradient."""
     num_samples = y.shape[0]
+    #     loss = compute_logistic_loss(y, tx, w) + (lambda_ / 2) * w.T.dot(w)
+    #     gradient = compute_logistic_gradient(y, tx, w) + lambda_ * w
+
     loss = calculate_loss_log(y, tx, w) + lambda_ * np.squeeze(w.T.dot(w))
     gradient = calculate_gradient_log(y, tx, w) + 2 * lambda_ * w
     return loss, gradient
@@ -85,7 +88,8 @@ def learning_by_penalized_gradient(y, tx, w, gamma, lambda_):
     Return the loss and updated w.
     """
     loss, gradient = penalized_logistic_regression(y, tx, w, lambda_)
-    w -= gamma * gradient
+    w = w - gamma * gradient
+
     return loss, w
 
 
@@ -365,6 +369,7 @@ def compute_logistic_loss(y, tx, w):
     tx_dot_w = tx.dot(w)
     return np.sum(np.log(1. + np.exp(tx_dot_w)) - y * tx_dot_w)
 
+
 def compute_logistic_gradient(y, tx, w):
     """
     Computes the gradient of the loss function used in logistic regression.
@@ -378,22 +383,23 @@ def compute_logistic_gradient(y, tx, w):
     """
     return tx.T.dot(sigmoid(tx.dot(w)) - y)
 
-def penalized_logistic_regression(y, tx, w, lambda_):
-    """
-    Adds the penalization term (2-norm of w vector) on top of the normal
-    logistic loss. Computes the modified loss and gradient.
-    Args:
-        y: labels
-        tx: features
-        w: weight vector
-    Returns:
-        loss: the modified version of the normal logistic loss
-        logistic_gradient: the gradient of modified loss function used in
-            penalized logistic regression.
-    """
-    loss = compute_logistic_loss(y, tx, w) + (lambda_ / 2) * w.T.dot(w)
-    gradient = compute_logistic_gradient(y, tx, w) + lambda_ * w
-    return loss, gradient
+
+# def penalized_logistic_regression(y, tx, w, lambda_):
+#     """
+#     Adds the penalization term (2-norm of w vector) on top of the normal
+#     logistic loss. Computes the modified loss and gradient.
+#     Args:
+#         y: labels
+#         tx: features
+#         w: weight vector
+#     Returns:
+#         loss: the modified version of the normal logistic loss
+#         logistic_gradient: the gradient of modified loss function used in
+#             penalized logistic regression.
+#     """
+#     loss = compute_logistic_loss(y, tx, w) + (lambda_ / 2) * w.T.dot(w)
+#     gradient = compute_logistic_gradient(y, tx, w) + lambda_ * w
+#     return loss, gradient
 
 def cross_terms(x, x_initial):
     """
@@ -600,7 +606,7 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma):
             break # convergence criterion met
     return ws[-1], losses[-1]
 
-def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+def reg_logistic_regression(y, tx, lambda_, initial_w, epochs, gamma):
     """
     Regularized logistic regression using gradient descent
     Args:
@@ -619,7 +625,7 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     ws = [initial_w]
     losses = []
     w = initial_w
-    for iter in range(max_iters):
+    for iter in range(epochs):
         loss, gradient_vector = penalized_logistic_regression(y, tx, w, lambda_)
         w = w - gamma * gradient_vector
         ws.append(w)

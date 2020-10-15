@@ -7,12 +7,12 @@ import click
 import itertools as it
 import datetime
 
-from src.data_loader import DataLoader
-from src.preprocessing import *
-from src.models import *
-from src.visualizations import plot_errors
-from src.utils import build_k_indices
-from src.evaluation import Evaluation
+from data_loader import DataLoader
+from preprocessing import *
+from models import LogisticRegression
+from visualizations import plot_errors
+from utils import build_k_indices
+from evaluation import Evaluation
 
 
 def settings_combinations(search_space):
@@ -22,95 +22,61 @@ def settings_combinations(search_space):
     return settings
 
 
-@click.command()
-@click.option('-p1', '--param1', required=False, default=0)
-@click.option('-p2', '--param2', required=False, default=0)
-def main(param1, param2):
-
-    # Load the data
-    data_obj = DataLoader()
-
-    group_labels = list(range(4))
-    groups = dict()
-
-    # split data into 4 groups based on their value in the `jet` feature
-    for label in group_labels:
-        y_, tx_ = get_jet_data_split(data_obj.y, data_obj.tx, label)
-
-        print('\nJet: {}'.format(label))
-        print('Original shape: {}'.format(tx_.shape))
-
-        tx_ = remove_empty_features(tx_)  # remove empty features
-        tx_ = remove_constant_features(tx_)  # remove constant features
-
-        # treat outliers & missing data
-        q1, q3, median = standardization(tx_)
-        tx_ = replace_outliers(tx_, q1, q3, median)
-        tx_, tx_imputed = treat_missing_data(tx_)
-
-        print('Final shape: {}'.format(tx_.shape))
-
-        groups[str(label)] = {
-            'y': y_,
-            'tx': tx_,
-            'imputed': tx_imputed
-        }
-
+def model_selection(tx, y, jet, verbose=False):
     model_parameters = {
-        # 'penalty': ['l1', 'l2', 'elasticnet'],
-        'gamma': [0.001, 0.1, 0.5, 1, 2, 10],
-        'l1_ratio': [0.25, 0.5, 0.75],
-        'model': [Model],
+        'folds': [5, 10],
+        'gamma': [0.0000001, 0.000001, 0.00001, 0.0001],
+        'lambda': [0.0000001, 0.000001, 0.00001, 0.0001],
     }
 
     # get all the possible combinations of settings
     model_settings = settings_combinations(model_parameters)
 
-    print('\nHyper-parameter will run for {} model settings'.format(len(model_settings)))
+    print('\nHyper-parameter will run for {} model settings'.format(len(model_settings))) if verbose else None
 
-    best_model = {
-        'f1': 0
-    }
+    best_model = {'f1': 0}
     for model_setting in model_settings:  # loop for mode hyper-parameter tuning
 
-        print('Current setting running: {}'.format(model_setting))
-
         # Training
-        gamma = model_setting[0]
-        l1_ratio = model_setting[1]
-        model_class = model_setting[2]
-        folds = 5
-        f1_sum = 0
+        folds = model_setting[0]
+        gamma = model_setting[1]
+        lambda_ = model_setting[2]
 
-        # Run for only one jet
-        tx = groups['0']['tx']
-        y = groups['0']['y']
+        print('\nCurrent setting running: K-folds: {folds}, gamma: {gamma}, lambda: {lambda_}'.format(
+            folds=folds, gamma=gamma, lambda_=lambda_)) if verbose else None
 
         # Run cross-validation
         k_indices = build_k_indices(y, folds)
+        f1_sum = 0
         for k in range(folds):
             # Create indices for the train and validation sets
             val_indice = k_indices[k]
             tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)]
             tr_indice = tr_indice.reshape(-1)
 
-            x_train = tx[tr_indice][:1000]
-            x_val = tx[val_indice][:500]
-            y_train = y[tr_indice][:1000]
-            y_val = y[val_indice][:500]
+            x_train = tx[tr_indice]
+            x_val = tx[val_indice]
+            y_train = y[tr_indice]
+            y_val = y[val_indice]
 
-            model = model_class(x_train, y_train, x_val, y_val)  # instantiate model object
+            model = LogisticRegression(x_train, y_train, x_val, y_val)  # instantiate model object
             initial_w = np.zeros(x_train.shape[1])  # initiate the weights
 
             # Training
             start_time = datetime.datetime.now()
-            training_error, validation_error = model.fit(gamma=gamma, initial_w=initial_w)
+            training_error, validation_error = model.fit(initial_w=initial_w,
+                                                         gamma=gamma,
+                                                         lambda_=lambda_,
+                                                         verbose=False)
             execution_time = (datetime.datetime.now() - start_time).total_seconds()
 
-            print("Gradient Descent: execution time={t:.3f} seconds".format(t=execution_time))
+            print("\tGradient Descent for {k}/{folds} folds: execution time={t:.3f} seconds "
+                  "with training error: {train_loss:.4f} and validation error: {val_loss:.4f}".format(
+                k=k+1, folds=folds, t=execution_time, train_loss=training_error[-1],
+                val_loss=validation_error[-1])) if verbose else None
 
             # Plotting
-            plot_errors(loss_train=training_error, loss_val=validation_error)
+            plot_errors(loss_train=training_error, loss_val=validation_error) if verbose else None
 
             # evaluation of validation
             pred = (model.predict(x_val) >= 1/2).astype(int)
@@ -120,14 +86,51 @@ def main(param1, param2):
 
         avg_f1 = f1_sum / folds
 
+        print('Avg F1 score on these settings: {f1}'.format(f1=avg_f1)) if verbose else None
+
         if best_model['f1'] < avg_f1:
             best_model['f1'] = avg_f1
             best_model['gamma'] = gamma
-            best_model['l1_ratio'] = l1_ratio
+            best_model['lambda'] = lambda_
             best_model['folds'] = folds
 
-    print('\nBest model:')
+    print('\nBest model for Jet {jet}'.format(jet=jet))
     print(best_model)
+
+
+@click.command()
+@click.option('-j', '--jet', required=False, default=-1)
+def main(jet):
+
+    # Load the data
+    data_obj = DataLoader()
+
+    jets = list(range(4))
+    # Can be run for specific jet
+    if jet != -1:
+        jets = [jet]
+
+    # split data into 4 groups based on their value in the `jet` feature
+    for jet in jets:
+        y, tx = get_jet_data_split(data_obj.y, data_obj.tx, jet)
+
+        print('\n' + '-' * 50 + '\n')
+        print('DATA PRE-PROCESSING FOR JET {}'.format(jet))
+        print('Original shape: {}'.format(tx.shape))
+
+        tx = remove_empty_features(tx)  # remove empty features
+        tx = remove_constant_features(tx)  # remove constant features
+
+        # treat outliers & missing data
+        q1, q3, median = standardization(tx)
+        tx = replace_outliers(tx, q1, q3, median)
+        tx, tx_imputed = treat_missing_data(tx)
+
+        print('Final shape: {}'.format(tx.shape))
+
+        print('\nRUNNING MODEL SELECTION FOR JET {jet}'.format(jet=jet))
+
+        model_selection(tx, y, jet, verbose=False)
 
 
 if __name__ == '__main__':

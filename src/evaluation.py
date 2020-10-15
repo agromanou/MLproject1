@@ -2,7 +2,6 @@
 Module description
 """
 
-import numpy as np
 
 class Evaluation:
 
@@ -22,13 +21,13 @@ class Evaluation:
         return self.get_count((1, 1))
 
     def get_false_positives(self):
-        return self.get_count((-1, 1))
+        return self.get_count((0, 1))
 
     def get_true_negatives(self):
         return self.get_count((-1, -1))
 
     def get_false_negatives(self):
-        return self.get_count((1, -1))
+        return self.get_count((1, 0))
 
     def get_precision(self):
         tp = self.get_true_positives()

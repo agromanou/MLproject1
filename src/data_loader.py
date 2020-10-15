@@ -6,7 +6,14 @@ Module description
 import numpy as np
 import os
 
-from src import DATA_DIR
+
+def get_root_dir():
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+ROOT_DIR = get_root_dir()
+DATA_DIR = os.path.join(ROOT_DIR, 'data')
+MODEL_DIR = os.path.join(ROOT_DIR, 'models')
 
 
 class DataLoader:
@@ -22,8 +29,7 @@ class DataLoader:
 
     def get_datasets(self):
         """
-
-        :return:
+        Getter method to get all datasets in one dict.
         """
         data = {
             'train': {
@@ -74,13 +80,6 @@ class DataLoader:
         # self.tx_test_labeled = tx_te
         # self.y_test_labeled = yb_te
         self.test = test
-
-    def compute_statistics(self):
-        """
-
-        :return:
-        """
-        pass
 
     @staticmethod
     def split_data(x, y, ratio, seed=1):
