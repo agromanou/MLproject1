@@ -49,7 +49,23 @@ def get_best_parameters(w0, w1, losses):
     min_row, min_col = np.unravel_index(np.argmin(losses), losses.shape)
     return losses[min_row, min_col], w0[min_row], w1[min_col]
 
-
+def split_data(x, y, ratio, myseed=1):
+    """split the dataset based on the split ratio."""
+    # set seed
+    np.random.seed(myseed)
+    # generate random indices
+    num_row = len(y)
+    indices = np.random.permutation(num_row)
+    index_split = int(np.floor(ratio * num_row))
+    index_tr = indices[: index_split]
+    index_te = indices[index_split:]
+    # create split
+    x_tr = x[index_tr]
+    x_te = x[index_te]
+    y_tr = y[index_tr]
+    y_te = y[index_te]
+    return x_tr, x_te, y_tr, y_te
+    
 def build_k_indices(y, folds, seed=1):
     """
     Builds k indices for k-fold cross validation.
@@ -120,10 +136,3 @@ if __name__ == '__main__':
         tr_indice = tr_indice.reshape(-1)
         print(te_indice)
         print(tr_indice)
-
-
-
-
-
-
-
