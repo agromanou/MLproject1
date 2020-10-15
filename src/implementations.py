@@ -267,3 +267,363 @@ def reg_logistic_regression(y, tx, lambda_ , initial_w, max_iters, gamma):
     print("loss={l}".format(l=calculate_loss(y, tx, w)))
     loss = losses[-1]
     return w, loss
+
+
+
+
+#===============================
+
+
+import numpy as np
+
+# The helper methods used by the learning methods above are implemented below:
+
+def compute_error_vector(y, tx, w):
+    """
+    Computes the error vector that is defined as y - tx . w
+    Args:
+        y: labels
+        tx: features
+        w: weight vector
+    Returns:
+        error_vector: the error vector defined as y - tx.dot(w)
+    """
+    return y - tx.dot(w)
+
+def compute_mse(error_vector):
+    """
+    Computes the mean squared error for a given error vector.
+    Args:
+        error_vector: error vector computed for a specific dataset and model
+    Returns:
+        mse: numeric value of the mean squared error
+    """
+    return np.mean(error_vector ** 2) / 2
+
+def compute_gradient(tx, error_vector):
+    """
+    Computes the gradient for the mean squared error loss function.
+    Args:
+        y: labels
+        error_vector: error vector computed for a specific data set and model
+    Returns:
+        gradient: the gradient vector computed according to its definition
+    """
+    return - tx.T.dot(error_vector) / error_vector.size
+
+def build_polynomial(x, degree):
+    """
+    Extends the feature matrix, x, by adding a polynomial basis of the given degree.
+    Args:
+        x: features
+        degree: degree of the polynomial basis
+    Returns:
+        augmented_x: expanded features based on a polynomial basis
+    """
+    num_cols = x.shape[1] if len(x.shape) > 1 else 1
+    augmented_x = np.ones((len(x), 1))
+    for col in range(num_cols):
+        for degree in range(1, degree + 1):
+            if num_cols > 1:
+                augmented_x = np.c_[augmented_x, np.power(x[ :, col], degree)]
+            else:
+                augmented_x = np.c_[augmented_x, np.power(x, degree)]
+        if num_cols > 1 and col != num_cols - 1:
+            augmented_x = np.c_[augmented_x, np.ones((len(x), 1))]
+    return augmented_x
+
+def compute_rmse(loss_mse):
+    """
+    Computes the root mean squared error.
+    Args:
+        loss_mse: numeric value of the mean squared error loss
+    Returns:
+        loss_rmse: numeric value of the root mean squared error loss
+    """
+    return np.sqrt(2 * loss_mse)
+
+def sigmoid(t):
+    """
+    Applies the sigmoid function to a given input t.
+    Args:
+        t: the given input to which the sigmoid function will be applied.
+    Returns:
+        sigmoid_t: the value of sigmoid function applied to t
+    """
+    return 1. / (1. + np.exp(-t))
+
+def compute_logistic_loss(y, tx, w):
+    """
+    Computes the loss as the negative log likelihood of picking the correct label.
+    Args:
+        y: labels
+        tx: features
+        w: weight vector
+    Returns:
+        loss: the negative log likelihood of picking the correct label
+    """
+    tx_dot_w = tx.dot(w)
+    return np.sum(np.log(1. + np.exp(tx_dot_w)) - y * tx_dot_w)
+
+def compute_logistic_gradient(y, tx, w):
+    """
+    Computes the gradient of the loss function used in logistic regression.
+    Args:
+        y: labels
+        tx: features
+        w: weight vector
+    Returns:
+        logistic_gradient: the gradient of the loss function used in
+            logistic regression.
+    """
+    return tx.T.dot(sigmoid(tx.dot(w)) - y)
+
+def penalized_logistic_regression(y, tx, w, lambda_):
+    """
+    Adds the penalization term (2-norm of w vector) on top of the normal
+    logistic loss. Computes the modified loss and gradient.
+    Args:
+        y: labels
+        tx: features
+        w: weight vector
+    Returns:
+        loss: the modified version of the normal logistic loss
+        logistic_gradient: the gradient of modified loss function used in
+            penalized logistic regression.
+    """
+    loss = compute_logistic_loss(y, tx, w) + (lambda_ / 2) * w.T.dot(w)
+    gradient = compute_logistic_gradient(y, tx, w) + lambda_ * w
+    return loss, gradient
+
+def cross_terms(x, x_initial):
+    """
+    Adds the multiplication of different features as new features.
+    Args:
+        x: the given feature matrix
+        x_initial: the features whose multiplications will be added
+    Returns:
+        x_cross_terms: feature matrix with cross terms
+    """
+    for col1 in range(x_initial.shape[1]):
+        for col2 in np.arange(col1 + 1, x_initial.shape[1]):
+            if col1 != col2:
+                x = np.c_[x, x_initial[:, col1] * x_initial[:, col2]]
+    return x
+
+def log_terms(x, x_initial):
+    """
+    Adds the logarithms of features as new features.
+    Args:
+        x: the given feature matrix
+        x_initial: the features whose logarithms will be added
+    Returns:
+        x_log_terms: feature matrix with logarithms
+    """
+    for col in range(x_initial.shape[1]):
+        current_col = x_initial[:, col]
+        current_col[current_col <= 0] = 1
+        x = np.c_[x, np.log(current_col)]
+    return x
+
+def sqrt_terms(x, x_initial):
+    """
+    Adds the square roots of features as new features.
+    Args:
+        x: the given feature matrix
+        x_initial: the features whose square roots will be added
+    Returns:
+        x_sqrt_terms: feature matrix with square roots
+    """
+    for col in range(x_initial.shape[1]):
+        current_col = np.abs(x_initial[:, col])
+        x = np.c_[x, np.sqrt(current_col)]
+    return x
+
+def apply_trigonometry(x, x_initial):
+    """
+    Adds the sin and cos of features as new features.
+    Args:
+        x: the given feature matrix
+        x_initial: the features whose sin and cos will be added
+    Returns:
+        x_sqrt_terms: feature matrix with sine values
+    """
+    for col in range(x_initial.shape[1]):
+        x = np.c_[x, np.sin(x_initial[:, col])]
+        x = np.c_[x, np.cos(x_initial[:, col])]
+    return x
+
+def feature_engineering(x, degree, has_angles = False):
+    """
+    Builds a polynomial with the given degree from the initial features,
+    add the cross terms, logarithms and square roots of the initial features
+    as new features. Also includes the sine of features as an option.
+    Args:
+        x: features
+        degree: degree of the polynomial basis
+        has_angles: Boolean value to determine including sin and cos of features
+    Returns:
+        x_engineered: engineered features
+    """
+    x_initial = x
+    x = build_polynomial(x, degree)
+    x = cross_terms(x, x_initial)
+    x = log_terms(x, x_initial)
+    x = sqrt_terms(x, x_initial)
+    if has_angles:
+        x = apply_trigonometry(x, x_initial)
+    return x
+
+
+# The six compulsory learning methods are as implemented as follows:
+
+def least_squares_GD(y, tx, initial_w, max_iters, gamma):
+    """
+    Linear regression using gradient descent
+    Args:
+        y: labels
+        tx: features
+        initial_w: initial weight vector
+        max_iters: number of steps to run
+        gamma: step-size
+    Returns:
+        w: optimized weight vector for the model
+        loss: optimized final loss based on mean squared error
+    """
+    threshold = 1e-8
+    ws = [initial_w]
+    losses = []
+    w = initial_w
+    for _ in range(max_iters):
+        error_vector = compute_error_vector(y, tx, w)
+        loss = compute_mse(error_vector)
+        gradient_vector = compute_gradient(tx, error_vector)
+        w = w - gamma * gradient_vector
+        ws.append(w)
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break # convergence criterion met
+    return ws[-1], losses[-1]
+
+def least_squares_SGD(y, tx, initial_w, max_iters, gamma):
+    """
+    Linear regression using stochastic gradient descent
+    Args:
+        y: labels
+        tx: features
+        initial_w: initial weight vector
+        max_iters: number of steps to run
+        gamma: step-size
+    Returns:
+        w: optimized weight vector for the model
+        loss: optimized final loss based on mean squared error
+    """
+    threshold = 1e-8
+    ws = [initial_w]
+    losses = []
+    w = initial_w
+    for _ in range(max_iters):
+        random_index = np.random.randint(len(y))
+        # sample a random data point from y vector
+        y_random = y[random_index]
+        # sample a random row vector from tx matrix
+        tx_random = tx[random_index]
+        error_vector = compute_error_vector(y_random, tx_random, w)
+        loss = compute_mse(error_vector)
+        gradient_vector = compute_gradient(tx_random, error_vector)
+        w = w - gamma * gradient_vector
+        ws.append(w)
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break # convergence criterion met
+    return ws[-1], losses[-1]
+
+def least_squares(y, tx):
+    """
+    Least squares regression using normal equations
+    Args:
+        y: labels
+        tx: features
+    Returns:
+        w: optimized weight vector for the model
+        loss: optimized final loss based on mean squared error
+    """
+    coefficient_matrix = tx.T.dot(tx)
+    constant_vector = tx.T.dot(y)
+    w = np.linalg.solve(coefficient_matrix, constant_vector)
+    error_vector = compute_error_vector(y, tx, w)
+    loss = compute_mse(error_vector)
+    return w, loss
+
+def ridge_regression(y, tx, lambda_):
+    """
+    Ridge regression using normal equations
+    Args:
+        y: labels
+        tx: features
+        lambda_: regularization parameter
+    Returns:
+        w: optimized weight vector for the model
+        loss: optimized final loss based on mean squared error
+    """
+    coefficient_matrix = tx.T.dot(tx) + 2 * len(y) * lambda_ * np.identity(tx.shape[1])
+    constant_vector = tx.T.dot(y)
+    w = np.linalg.solve(coefficient_matrix, constant_vector)
+    error_vector = compute_error_vector(y, tx, w)
+    loss = compute_mse(error_vector)
+    return w, loss
+
+def logistic_regression(y, tx, initial_w, max_iters, gamma):
+    """
+    Logistic regression using stochastic gradient descent
+    Args:
+        y: labels
+        tx: features
+        initial_w: initial weight vector
+        max_iters: number of steps to run
+        gamma: step-size
+    Returns:
+        w: optimized weight vector for the model
+        loss: optimized final loss based on logistic loss
+    """
+    threshold = 1e-8
+    ws = [initial_w]
+    losses = []
+    w = initial_w
+    for _ in range(max_iters):
+        loss = compute_logistic_loss(y, tx, w)
+        gradient_vector = compute_logistic_gradient(y, tx, w)
+        w = w - gamma * gradient_vector
+        ws.append(w)
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break # convergence criterion met
+    return ws[-1], losses[-1]
+
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+    """
+    Regularized logistic regression using gradient descent
+    Args:
+        y: labels
+        tx: features
+        lambda_: regularization parameter
+        initial_w: initial weight vector
+        max_iters: number of steps to run
+        gamma: step-size
+    Returns:
+        w: optimized weight vector for the model
+        loss: optimized final loss based on logistic loss
+    """
+    threshold = 1e-8
+    w = initial_w
+    ws = [initial_w]
+    losses = []
+    w = initial_w
+    for iter in range(max_iters):
+        loss, gradient_vector = penalized_logistic_regression(y, tx, w, lambda_)
+        w = w - gamma * gradient_vector
+        ws.append(w)
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break # convergence criterion met
+    return ws[-1], losses[-1]

@@ -5,9 +5,8 @@ Module description
 """
 import numpy as np
 from src.implementations import \
-    learning_by_penalized_gradient, \
-    penalized_logistic_regression, \
-    calculate_loss_log, \
+    reg_logistic_regression \
+    compute_logistic_loss, \
     sigmoid
 
 
@@ -44,8 +43,10 @@ class Model:
 
         for epoch in range(epochs):
 
-            loss, w = learning_by_penalized_gradient(self.y_train, self.tx_train, w, gamma, lambda_)
-            val_loss = calculate_loss_log(self.y_val, self.tx_val, w)
+            w, loss = reg_logistic_regression(self.y_train, self.tX_train, lambda_,
+                                    initial_w, max_iters, gamma)
+
+            val_loss = compute_logistic_loss(self.y_val, self.tx_val, w)
 
             ws.append(w)
             loss_train.append(loss)
