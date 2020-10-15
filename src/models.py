@@ -26,7 +26,7 @@ class LogisticRegression:
         self.w = None
         self.lambda_ = None
 
-    def fit(self, gamma, initial_w, lambda_=0, epochs=100, verbose=False):
+    def fit(self, gamma, initial_w, lambda_=0, epochs=1000, verbose=False):
         """
         Fit the model to the data.
 
@@ -55,15 +55,15 @@ class LogisticRegression:
             val_loss = self.calculate_penalized_loss_log(self.y_val, self.tx_val, w)
 
             ws.append(w)
-            loss_train.append(loss)
-            loss_val.append(val_loss)
+            loss_train.append(loss / len(self.tx_train))
+            loss_val.append(val_loss / len(self.tx_val))
 
             if len(loss_train) > 1 and np.abs(loss_train[-1] - loss_train[-2]) < threshold:
                 break  # convergence criterion met
 
-            if verbose:
-                print("Gradient Descent({epoch}/{epochs}): training-loss={loss} | validation-loss={val_loss}".format(
-                    epoch=epoch, epochs=epochs - 1, loss=loss, val_loss=val_loss))
+            print("Gradient Descent({epoch}/{epochs}): "
+                  "training-loss={loss:.5f} | validation-loss={val_loss:.5f}".format(
+                epoch=epoch, epochs=epochs - 1, loss=loss, val_loss=val_loss)) if verbose else None
 
         self.w = w
 
