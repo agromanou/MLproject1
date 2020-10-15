@@ -3,7 +3,7 @@
 
 Stochastic Gradient Descent
 """
-from helpers import batch_iter
+from old_stuff_to_be_tossed.helpers import batch_iter
 from costs import compute_loss
 
 

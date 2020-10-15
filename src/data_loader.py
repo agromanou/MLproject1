@@ -29,8 +29,7 @@ class DataLoader:
 
     def get_datasets(self):
         """
-
-        :return:
+        Getter method to get all datasets in one dict.
         """
         data = {
             'train': {
@@ -81,13 +80,6 @@ class DataLoader:
         # self.tx_test_labeled = tx_te
         # self.y_test_labeled = yb_te
         self.test = test
-
-    def compute_statistics(self):
-        """
-
-        :return:
-        """
-        pass
 
     @staticmethod
     def split_data(x, y, ratio, seed=1):

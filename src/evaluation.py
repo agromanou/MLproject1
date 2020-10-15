@@ -2,7 +2,6 @@
 Module description
 """
 
-import numpy as np
 
 class Evaluation:
 
@@ -10,7 +9,6 @@ class Evaluation:
         self.y_actual = y_actual.tolist()
         self.y_pred = y_pred.tolist()
 
-    
     def get_count(self, target):
         count = 0
         for t in zip(self.y_actual, self.y_pred):
@@ -20,16 +18,16 @@ class Evaluation:
 
     def get_true_positives(self):
         return self.get_count((1, 1))
-    
+
     def get_false_positives(self):
         return self.get_count((0, 1))
-    
+
     def get_true_negatives(self):
         return self.get_count((0, 0))
 
     def get_false_negatives(self):
         return self.get_count((1, 0))
-    
+
     def get_precision(self):
         tp = self.get_true_positives()
         fp = self.get_false_positives()
@@ -44,7 +42,7 @@ class Evaluation:
         pr = self.get_precision()
         rec = self.get_recall()
         return 2 * pr * rec / (pr + rec)
-    
+
     def get_accuracy(self):
         tp = self.get_true_positives()
         fp = self.get_false_positives()
