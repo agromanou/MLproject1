@@ -7,12 +7,12 @@ import click
 import itertools as it
 import datetime
 
-from src.data_loader import DataLoader
-from src.preprocessing import *
-from src.models import *
-from src.visualizations import plot_errors
-from src.utils import build_k_indices
-from src.evaluation import Evaluation
+from data_loader import DataLoader
+from preprocessing import *
+from models import LogisticRegression
+from visualizations import plot_errors
+from utils import build_k_indices
+from evaluation import Evaluation
 
 
 def settings_combinations(search_space):
@@ -57,10 +57,8 @@ def main(param1, param2):
         }
 
     model_parameters = {
-        # 'penalty': ['l1', 'l2', 'elasticnet'],
         'gamma': [0.001, 0.1, 0.5, 1, 2, 10],
         'l1_ratio': [0.25, 0.5, 0.75],
-        'model': [Model],
     }
 
     # get all the possible combinations of settings
@@ -78,7 +76,6 @@ def main(param1, param2):
         # Training
         gamma = model_setting[0]
         l1_ratio = model_setting[1]
-        model_class = model_setting[2]
         folds = 5
         f1_sum = 0
 
@@ -99,12 +96,12 @@ def main(param1, param2):
             y_train = y[tr_indice][:1000]
             y_val = y[val_indice][:500]
 
-            model = model_class(x_train, y_train, x_val, y_val)  # instantiate model object
+            model = LogisticRegression(x_train, y_train, x_val, y_val)  # instantiate model object
             initial_w = np.zeros(x_train.shape[1])  # initiate the weights
 
             # Training
             start_time = datetime.datetime.now()
-            training_error, validation_error = model.fit(gamma=gamma, initial_w=initial_w)
+            training_error, validation_error = model.fit(gamma=gamma, initial_w=initial_w, verbose=True)
             execution_time = (datetime.datetime.now() - start_time).total_seconds()
 
             print("Gradient Descent: execution time={t:.3f} seconds".format(t=execution_time))
@@ -125,6 +122,8 @@ def main(param1, param2):
             best_model['gamma'] = gamma
             best_model['l1_ratio'] = l1_ratio
             best_model['folds'] = folds
+
+        break
 
     print('\nBest model:')
     print(best_model)

@@ -6,7 +6,14 @@ Module description
 import numpy as np
 import os
 
-from src import DATA_DIR
+
+def get_root_dir():
+    return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+ROOT_DIR = get_root_dir()
+DATA_DIR = os.path.join(ROOT_DIR, 'data')
+MODEL_DIR = os.path.join(ROOT_DIR, 'models')
 
 
 class DataLoader:
