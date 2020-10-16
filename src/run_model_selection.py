@@ -9,7 +9,7 @@ import datetime
 
 from data_loader import DataLoader
 from preprocessing import *
-from models import LogisticRegression
+from implementations import Models
 from visualizations import plot_errors
 from utils import build_k_indices
 from evaluation import Evaluation
@@ -22,28 +22,6 @@ def settings_combinations(search_space):
     return settings
 
 
-def preprocess(tx_train, tx_test):
-    # remove empty features
-    tx_train = remove_empty_features(tx_train)
-    tx_test = remove_empty_features(tx_test)
-
-    # remove constant features
-    tx_train = remove_constant_features(tx_train)
-    tx_test = remove_constant_features(tx_test)
-
-    # treat outliers
-    standardization = Standardization()
-    standardization.fit(tx_train)
-
-    tx_train = standardization.transform(tx_train)
-    tx_test = standardization.transform(tx_test)
-
-    # treat missing data
-    tx_train, tx_train_imputed = treat_missing_data(tx_train)
-    tx_test, tx_test_imputed = treat_missing_data(tx_test)
-
-    return tx_train, tx_test
-
 
 def model_selection(tx, y, jet, verbose=False):
     model_parameters = {
@@ -52,9 +30,17 @@ def model_selection(tx, y, jet, verbose=False):
         'features_list': [3, 4, 5, 6, 7],
         'folds': [5, 10],
         'gamma': [0.0000001, 0.000001, 0.00001, 0.0001],
-        'lambda': [0.0000001, 0.000001, 0.00001, 0.0001],
+        'lambda': [0.0000001, 0.000001, 0.00001, 0.0001]
     }
 
+    model_parameters = {
+        'degrees_list': [2],
+        'epochs': [500],
+        'features_list': [3],
+        'folds': [3],
+        'gamma': [0.0000001],
+        'lambda': [0.0000001]
+    }
     # get all the possible combinations of settings
     model_settings = settings_combinations(model_parameters)
 
@@ -93,10 +79,12 @@ def model_selection(tx, y, jet, verbose=False):
             x_train, x_val = preprocess(x_train, x_val)
 
             # feature creation
-            # TODO feature creation
+            feature_generator = FeatureEngineering()
+            x_train = feature_generator.fit_transform(x_train, y_train, degrees, features)
+            x_val = feature_generator.transform(x_val)
 
             # Training
-            model = LogisticRegression(x_train, y_train, x_val, y_val)  # instantiate model object
+            model = Models(x_train, y_train, x_val, y_val)  # instantiate model object
             initial_w = np.zeros(x_train.shape[1])  # initiate the weights
 
             start_time = datetime.datetime.now()

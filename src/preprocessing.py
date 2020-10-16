@@ -4,9 +4,9 @@
 Module description
 """
 import numpy as np
+from implementations import Models
 
-
-def get_jet_data_split(y, tx, jet_num):
+def get_jet_data_split(y, tx, group):
     """
     Splits the given data set such that only the data points with a certain
     jet number remains, where jet number is a discrete valued feature. In
@@ -20,8 +20,10 @@ def get_jet_data_split(y, tx, jet_num):
         tx_masked: numpy array of features of data points having the specified jet number
         ids_masked: numpy array of ids of data points having the specified jet number
     """
-    mask = tx[:, 22] == jet_num
-    return y[mask], tx[mask]
+    inds = np.where(tx[:,22]==group)
+    tx_sub = tx[inds]
+    y_sub = y[inds]
+    return y_sub, tx_sub
 
 
 def remove_empty_features(tx):
@@ -93,3 +95,82 @@ class Standardization:
         tx[outliers] = np.take(self.q1 + 1.5 * iqr, outliers[1])
 
         return (tx - self.median) / iqr
+
+
+def preprocess(tx_train, tx_test):
+    # remove empty features
+    tx_train = remove_empty_features(tx_train)
+    tx_test = remove_empty_features(tx_test)
+
+    # remove constant features
+    tx_train = remove_constant_features(tx_train)
+    tx_test = remove_constant_features(tx_test)
+
+    # treat outliers
+    standardization = Standardization()
+    standardization.fit(tx_train)
+
+    tx_train = standardization.transform(tx_train)
+    tx_test = standardization.transform(tx_test)
+
+    # treat missing data
+    tx_train, tx_train_imputed = treat_missing_data(tx_train)
+    tx_test, tx_test_imputed = treat_missing_data(tx_test)
+
+    return tx_train, tx_test
+
+
+class FeatureEngineering:
+    def __init__(self):
+        self.top_features_list = None
+        self.degree = None
+        self.number_interactions = None
+
+    def create_poly_features(self, tX, degree):
+        poly = np.ones((len(tX), 1))
+        for deg in range(1, degree+1):
+            poly = np.c_[poly, np.power(tX, deg)]
+
+        tX_poly = np.delete(poly, 0, 1)
+        return tX_poly
+
+    def create_interactions(self, tX, columns):
+        for col1 in columns:
+            for col2 in columns:
+                if col1 > col2:
+                    col3 = np.multiply(tX[:, col1], tX[:, col2])
+                    tX = np.c_[tX, col3]
+        return tX
+
+    def select_top_vars(self, tX, y, n=5):
+        initial_w =  np.zeros((tX.shape[1]))
+        model = Models()
+        w, loss = model.reg_logistic_regression(y, tX, 1e-6, initial_w, 100, 1e-6)
+        top_features_list = np.argsort(-abs(w))[:int(n)]
+        return top_features_list
+
+
+    def fit_transform(self, tX, y, degree, num_top_vars):
+        """
+        To be used with the training set
+
+        :param tx: np.array, with the data
+        """
+        self.degree = degree
+        self.num_top_vars = num_top_vars
+
+        tX_poly =  self.create_poly_features(tX, degree)
+        top_features_list = self.select_top_vars(tX_poly, y, num_top_vars)
+        self.top_features_list = top_features_list
+        tX_interactions = self.create_interactions(tX_poly, top_features_list)
+        return tX_interactions
+
+    # To be used with the testing set
+    def transform(self, tX):
+        """
+        :param tx: np.array, with the data
+        :return: np.array with the new features
+        """
+        tX_poly =  self.create_poly_features(tX, self.degree)
+        tX_interactions = self.create_interactions(tX_poly, self.top_features_list)
+        return tX_interactions
