@@ -22,16 +22,34 @@ def settings_combinations(search_space):
     return settings
 
 
-def model_selection(tx, y, jet, verbose=False):
-    """
+def preprocess(tx_train, tx_test):
+    # remove empty features
+    tx_train = remove_empty_features(tx_train)
+    tx_test = remove_empty_features(tx_test)
 
-    :param tx:
-    :param y:
-    :param jet:
-    :param verbose:
-    :return:
-    """
+    # remove constant features
+    tx_train = remove_constant_features(tx_train)
+    tx_test = remove_constant_features(tx_test)
+
+    # treat outliers
+    standardization = Standardization()
+    standardization.fit(tx_train)
+
+    tx_train = standardization.transform(tx_train)
+    tx_test = standardization.transform(tx_test)
+
+    # treat missing data
+    tx_train, tx_train_imputed = treat_missing_data(tx_train)
+    tx_test, tx_test_imputed = treat_missing_data(tx_test)
+
+    return tx_train, tx_test
+
+
+def model_selection(tx, y, jet, verbose=False):
     model_parameters = {
+        'degrees_list': [1, 2, 3, 4, 5],
+        'epochs': [500, 1000, 10000],
+        'features_list': [3, 4, 5, 6, 7],
         'folds': [5, 10],
         'gamma': [0.0000001, 0.000001, 0.00001, 0.0001],
         'lambda': [0.0000001, 0.000001, 0.00001, 0.0001],
@@ -46,9 +64,12 @@ def model_selection(tx, y, jet, verbose=False):
     for model_setting in model_settings:  # loop for mode hyper-parameter tuning
 
         # Training
-        folds = model_setting[0]
-        gamma = model_setting[1]
-        lambda_ = model_setting[2]
+        degrees = model_setting[0]
+        epochs = model_setting[1]
+        features = model_setting[2]
+        folds = model_setting[3]
+        gamma = model_setting[4]
+        lambda_ = model_setting[5]
 
         print('\nCurrent setting running: K-folds: {folds}, gamma: {gamma}, lambda: {lambda_}'.format(
             folds=folds, gamma=gamma, lambda_=lambda_)) if verbose else None
@@ -57,6 +78,7 @@ def model_selection(tx, y, jet, verbose=False):
         k_indices = build_k_indices(y, folds)
         f1_sum = 0
         for k in range(folds):
+
             # Create indices for the train and validation sets
             val_indice = k_indices[k]
             tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)]
@@ -67,14 +89,21 @@ def model_selection(tx, y, jet, verbose=False):
             y_train = y[tr_indice]
             y_val = y[val_indice]
 
+            # data pre-processing
+            x_train, x_val = preprocess(x_train, x_val)
+
+            # feature creation
+            # TODO feature creation
+
+            # Training
             model = LogisticRegression(x_train, y_train, x_val, y_val)  # instantiate model object
             initial_w = np.zeros(x_train.shape[1])  # initiate the weights
 
-            # Training
             start_time = datetime.datetime.now()
             training_error, validation_error = model.fit(initial_w=initial_w,
                                                          gamma=gamma,
                                                          lambda_=lambda_,
+                                                         epochs=epochs,
                                                          verbose=False)
             execution_time = (datetime.datetime.now() - start_time).total_seconds()
 
@@ -96,6 +125,7 @@ def model_selection(tx, y, jet, verbose=False):
 
         print('Avg F1 score on these settings: {f1:.4f}'.format(f1=avg_f1)) if verbose else None
 
+        # keep best model
         if best_model['f1'] < avg_f1:
             best_model['f1'] = avg_f1
             best_model['gamma'] = gamma
@@ -108,7 +138,7 @@ def model_selection(tx, y, jet, verbose=False):
 
 @click.command()
 @click.option('-j', '--jet', required=False, default=-1)
-@click.option('-v', '--verbose', required=False, default=False)
+@click.option('-v', '--verbose', required=False, default=True)
 def main(jet, verbose):
 
     # Load the data
@@ -124,23 +154,7 @@ def main(jet, verbose):
         y, tx = get_jet_data_split(data_obj.y, data_obj.tx, jet)
 
         print('\n' + '-' * 50 + '\n')
-        print('DATA PRE-PROCESSING FOR JET {}'.format(jet))
-        print('Original shape: {}'.format(tx.shape))
-
-        tx = remove_empty_features(tx)  # remove empty features
-        tx = remove_constant_features(tx)  # remove constant features
-
-        # treat outliers
-        standardization = Standardization()
-        standardization.fit(tx)
-        tx = standardization.transform(tx)
-
-        # treat missing data
-        tx, tx_imputed = treat_missing_data(tx)
-
-        print('Final shape: {}'.format(tx.shape))
-
-        print('\nRUNNING MODEL SELECTION FOR JET {jet}'.format(jet=jet))
+        print('RUNNING MODEL SELECTION FOR JET {jet}'.format(jet=jet))
 
         model_selection(tx, y, jet, verbose=verbose)
 
