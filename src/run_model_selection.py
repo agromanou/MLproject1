@@ -18,9 +18,67 @@ from evaluation import Evaluation
 def settings_combinations(search_space):
     all_names = sorted(search_space)
     settings = list(it.product(*(search_space[Name] for Name in all_names)))
-
     return settings
 
+def pipeline(x_train, y_train, x_val, y_val, degrees,  features, gamma,
+                                        lambda_, epochs, verbose):
+    data_cleaner = DataCleaning()
+    x_train = data_cleaner.fit_transform(x_train)
+    x_val = data_cleaner.transform(x_val)
+
+    feature_generator = FeatureEngineering()
+    x_train = feature_generator.fit_transform(x_train, y_train,
+                                                degrees, features)
+    x_val = feature_generator.transform(x_val)
+
+    model = Models(x_train, y_train, x_val, y_val)  # instantiate model object
+
+    initial_w = np.zeros(x_train.shape[1])  # initiate the weights
+    training_error, validation_error = model.fit(initial_w=initial_w,
+                                                 gamma=gamma,
+                                                 lambda_=lambda_,
+                                                 epochs=epochs,
+                                                 verbose=False)
+
+
+    print("\tGradient Descent with training error: {train_loss:.4f} \
+           and validation error: {val_loss:.4f}".format(
+            train_loss=training_error[-1],
+            val_loss=validation_error[-1])) if verbose else None
+
+    # evaluation of validation
+    pred = (model.predict(x_val) >= 1/2).astype(int)
+    evaluator = Evaluation(y_train, pred)
+    return evaluator.get_f1(), evaluator.get_accuracy()
+
+
+def cross_validation(tx, y, folds, degrees, features, gamma, lambda_,
+                                                    epochs, verbose):
+    f1_scores = []
+    accuracy_scores = []
+
+    num_rows = len(y)
+    interval = int(num_rows / folds)
+    indices = np.random.permutation(num_rows)
+
+    for fold in range(int(folds)):
+        test_indices = indices[fold*interval: (fold+1)*interval]
+        train_indices = [i for i in indices if i not in test_indices]
+
+        x_train = tx[train_indices]
+        y_train = y[train_indices]
+
+        x_val = tx[test_indices]
+        y_val = y[test_indices]
+
+        f1, accuracy = pipeline(x_train, y_train, x_val, y_val, degrees,
+                                features, gamma, lambda_, epochs, verbose)
+
+        f1_scores.append(f1)
+        accuracy_scores.append(accuracy)
+
+    return np.mean(f1_scores), np.std(f1_scores), \
+            np.mean(accuracy_scores), np.std(accuracy_scores)
 
 
 def model_selection(tx, y, jet, verbose=False):
@@ -47,6 +105,8 @@ def model_selection(tx, y, jet, verbose=False):
     print('\nHyper-parameter will run for {} model settings'.format(len(model_settings))) if verbose else None
 
     best_model = {'f1': 0}
+    results_list = []
+
     for model_setting in model_settings:  # loop for mode hyper-parameter tuning
 
         # Training
@@ -60,73 +120,31 @@ def model_selection(tx, y, jet, verbose=False):
         print('\nCurrent setting running: K-folds: {folds}, gamma: {gamma}, lambda: {lambda_}'.format(
             folds=folds, gamma=gamma, lambda_=lambda_)) if verbose else None
 
-        # Run cross-validation
-        k_indices = build_k_indices(y, folds)
-        f1_sum = 0
-        for k in range(folds):
+        f1_mean, f1_std, acc_mean, acc_std =  cross_validation(tx, y, folds,
+                              degrees, features, gamma, lambda_, epochs, verbose)
 
-            # Create indices for the train and validation sets
-            val_indice = k_indices[k]
-            tr_indice = k_indices[~(np.arange(k_indices.shape[0]) == k)]
-            tr_indice = tr_indice.reshape(-1)
+        results = [degrees, features, lambda_, gamma, epochs, folds, f1_mean,
+                                        f1_std, acc_mean, acc_std]
 
-            x_train = tx[tr_indice]
-            x_val = tx[val_indice]
-            y_train = y[tr_indice]
-            y_val = y[val_indice]
-
-            # data pre-processing
-            x_train, x_val = preprocess(x_train, x_val)
-
-            # feature creation
-            feature_generator = FeatureEngineering()
-            x_train = feature_generator.fit_transform(x_train, y_train, degrees, features)
-            x_val = feature_generator.transform(x_val)
-
-            # Training
-            model = Models(x_train, y_train, x_val, y_val)  # instantiate model object
-            initial_w = np.zeros(x_train.shape[1])  # initiate the weights
-
-            start_time = datetime.datetime.now()
-            training_error, validation_error = model.fit(initial_w=initial_w,
-                                                         gamma=gamma,
-                                                         lambda_=lambda_,
-                                                         epochs=epochs,
-                                                         verbose=False)
-            execution_time = (datetime.datetime.now() - start_time).total_seconds()
-
-            print("\tGradient Descent for {k}/{folds} folds: execution time={t:.3f} seconds "
-                  "with training error: {train_loss:.4f} and validation error: {val_loss:.4f}".format(
-                k=k+1, folds=folds, t=execution_time, train_loss=training_error[-1],
-                val_loss=validation_error[-1])) if verbose else None
-
-            # Plotting
-            plot_errors(loss_train=training_error, loss_val=validation_error) if verbose else None
-
-            # evaluation of validation
-            pred = (model.predict(x_val) >= 1/2).astype(int)
-
-            eval_obj = Evaluation(y, pred)
-            f1_sum += eval_obj.get_f1()
-
-        avg_f1 = f1_sum / folds
-
-        print('Avg F1 score on these settings: {f1:.4f}'.format(f1=avg_f1)) if verbose else None
+        results_list.append(results)
+        print('Avg F1 score on these settings: {f1:.4f}'.format(f1=f1_mean)) if verbose else None
 
         # keep best model
-        if best_model['f1'] < avg_f1:
-            best_model['f1'] = avg_f1
+        if best_model['f1'] < f1_mean:
+            best_model['f1'] = f1_mean
             best_model['gamma'] = gamma
             best_model['lambda'] = lambda_
             best_model['folds'] = folds
+            best_model['degrees'] = degrees
+            best_model['features'] = features
+            best_model['epochs'] = epochs
+
 
     print('\nBest model for Jet {jet}'.format(jet=jet))
     print(best_model)
+    return np.array(results_list)
 
 
-@click.command()
-@click.option('-j', '--jet', required=False, default=-1)
-@click.option('-v', '--verbose', required=False, default=True)
 def main(jet, verbose):
 
     # Load the data
@@ -144,7 +162,9 @@ def main(jet, verbose):
         print('\n' + '-' * 50 + '\n')
         print('RUNNING MODEL SELECTION FOR JET {jet}'.format(jet=jet))
 
-        model_selection(tx, y, jet, verbose=verbose)
+        results =  model_selection(tx, y, jet, verbose=verbose)
+        file_name ="./../results/gridsearch/results_{0}.csv".format(jet)
+        np.savetxt(file_name, results , delimiter=",")
 
 
 if __name__ == '__main__':
