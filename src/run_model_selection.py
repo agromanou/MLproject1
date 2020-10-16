@@ -3,15 +3,12 @@
 """
 Module description
 """
-import click
 import itertools as it
-import datetime
 
 from data_loader import DataLoader
 from preprocessing import *
 from implementations import Models
 from visualizations import plot_errors
-from utils import build_k_indices
 from evaluation import Evaluation
 
 
@@ -47,8 +44,8 @@ def pipeline(x_train, y_train, x_val, y_val, degrees,  features, gamma,
             val_loss=validation_error[-1])) if verbose else None
 
     # evaluation of validation
-    pred = (model.predict(x_val) >= 1/2).astype(int)
-    evaluator = Evaluation(y_train, pred)
+    pred = model.predict(x_val)
+    evaluator = Evaluation(y_val, pred)
     return evaluator.get_f1(), evaluator.get_accuracy()
 
 
@@ -94,10 +91,10 @@ def model_selection(tx, y, jet, verbose=False):
     model_parameters = {
         'degrees_list': [2],
         'epochs': [500],
-        'features_list': [3],
-        'folds': [3],
-        'gamma': [0.0000001],
-        'lambda': [0.0000001]
+        'features_list': [4],
+        'folds': [10],
+        'gamma': [0.00001],
+        'lambda': [0.00001]
     }
     # get all the possible combinations of settings
     model_settings = settings_combinations(model_parameters)
