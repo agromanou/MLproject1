@@ -31,6 +31,7 @@ class DataCleaning:
         self.q1 = None
         self.q3 = None
         self.median = None
+        self.constant_columns = None
 
     def remove_empty_features(self, tx):
         """
@@ -41,7 +42,6 @@ class DataCleaning:
         """
         tx = np.where(tx == -999, np.NaN, tx)
         tx = tx[:, ~np.all(np.isnan(tx), axis=0)]
-
         return tx
 
 
@@ -51,9 +51,12 @@ class DataCleaning:
         :param tx: a numpy array representing the given features
         :return: a numpy array representing the cleaned given features
         """
-        col_std = np.nanstd(tx, axis=0)
-        constant_ind = np.where(col_std == 0)[0]
-        return np.delete(tx, constant_ind, axis=1)
+        if self.constant_columns is None:
+            col_std = np.nanstd(tx, axis=0)
+            constant_ind = np.where(col_std == 0)[0]
+            self.constant_columns = constant_ind
+        tx = np.delete(tx, self.constant_columns , axis=1)
+        return tx
 
 
     def treat_missing_data(self, tx):

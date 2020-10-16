@@ -24,7 +24,7 @@ class DataLoader:
         self.tx_test_labeled = None
         self.y_test_labeled = None
         self.test = None
-
+        self.ids_test = None
         self._load_data(sub_sample)
 
     def get_datasets(self):
@@ -42,6 +42,7 @@ class DataLoader:
             },
             'test': {
                 'tx': self.test,
+                'ids': self.ids_test
             },
         }
 
@@ -59,7 +60,9 @@ class DataLoader:
 
         tx = np.genfromtxt(train_path_dataset, delimiter=",", skip_header=1)
         y = np.genfromtxt(train_path_dataset, delimiter=",", skip_header=1, dtype=str, usecols=1)
+
         test = np.genfromtxt(test_path_dataset, delimiter=",", skip_header=1)
+        ids_test = test[:, 0].astype(np.int)
 
         tx = tx[:, 2:]  # get train data minus the ids and labels
         test = test[:, 2:]  # get test data minus the ids and labels
@@ -80,6 +83,9 @@ class DataLoader:
         # self.tx_test_labeled = tx_te
         # self.y_test_labeled = yb_te
         self.test = test
+        self.ids_test = ids_test
+
+
 
     @staticmethod
     def split_data(x, y, ratio, seed=1):
@@ -117,3 +123,19 @@ class DataLoader:
         y_te = y[index_te]
 
         return x_tr, x_te, y_tr, y_te
+
+
+    @staticmethod
+    def create_csv_submission(ids, y_pred, name):
+        """
+        Creates an output file in csv format for submission to kaggle
+        Arguments: ids (event ids associated with each prediction)
+                   y_pred (predicted class labels)
+                   name (string name of .csv output file to be created)
+        """
+        with open(name, 'w') as csvfile:
+            fieldnames = ['Id', 'Prediction']
+            writer = csv.DictWriter(csvfile, delimiter=",", fieldnames=fieldnames)
+            writer.writeheader()
+            for r1, r2 in zip(ids, y_pred):
+                writer.writerow({'Id': int(r1), 'Prediction': int(r2)})
