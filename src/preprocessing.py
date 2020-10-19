@@ -26,60 +26,77 @@ def get_jet_data_split(y, tx, group):
     return y_sub, tx_sub
 
 
-def remove_empty_features(tx):
-    """
-    Finds the empty features presented in the dataset and removes them.
-
-    :param tx: a numpy array representing the given features
-    :return: a numpy array representing the cleaned given features
-    """
-    tx = np.where(tx == -999, np.NaN, tx)
-    tx = tx[:, ~np.all(np.isnan(tx), axis=0)]
-
-    return tx
-
-
-def remove_constant_features(tx):
-    """
-
-    :param tx: a numpy array representing the given features
-    :return: a numpy array representing the cleaned given features
-    """
-    col_std = np.nanstd(tx, axis=0)
-    constant_ind = np.where(col_std == 0)[0]
-    return np.delete(tx, constant_ind, axis=1)
-
-
-def treat_missing_data(tx):
-    # Fill na with median (in this case is 0)
-    median = np.zeros(tx.shape[1])
-    inds = np.where(np.isnan(tx))
-    tx[inds] = np.take(median, inds[1])
-
-    # Creates dummies for imputed values
-    tX_imputed = np.zeros((tx.shape[0], tx.shape[1]))
-    array_one = np.ones(tx.shape[1])
-    tX_imputed[inds] = np.take(array_one, inds[1])
-
-    return tx, tX_imputed
-
-
-class Standardization:
+class DataCleaning:
     def __init__(self):
         self.q1 = None
         self.q3 = None
         self.median = None
+        self.constant_columns = None
 
-    def fit(self, tx):
+    def remove_empty_features(self, tx):
+        """
+        Finds the empty features presented in the dataset and removes them.
+
+        :param tx: a numpy array representing the given features
+        :return: a numpy array representing the cleaned given features
+        """
+        tx = np.where(tx == -999, np.NaN, tx)
+        tx = tx[:, ~np.all(np.isnan(tx), axis=0)]
+        return tx
+
+
+    def remove_constant_features(self, tx):
+        """
+
+        :param tx: a numpy array representing the given features
+        :return: a numpy array representing the cleaned given features
+        """
+        if self.constant_columns is None:
+            col_std = np.nanstd(tx, axis=0)
+            constant_ind = np.where(col_std == 0)[0]
+            self.constant_columns = constant_ind
+        tx = np.delete(tx, self.constant_columns , axis=1)
+        return tx
+
+
+    def treat_missing_data(self, tx):
+        # Fill na with median (in this case is 0)
+        median = np.zeros(tx.shape[1])
+        inds = np.where(np.isnan(tx))
+        tx[inds] = np.take(median, inds[1])
+
+        # Creates dummies for imputed values
+        tX_imputed = np.zeros((tx.shape[0], tx.shape[1]))
+        array_one = np.ones(tx.shape[1])
+        tX_imputed[inds] = np.take(array_one, inds[1])
+
+        return tx, tX_imputed
+
+    def standardize(self, tx):
+        iqr = self.q3 - self.q1
+
+        outliers = np.where(tx > self.q3 + 1.5 * iqr)
+        tx[outliers] = np.take(self.q3 + 1.5 * iqr, outliers[1])
+        outliers = np.where(tx < self.q1 - 1.5 * iqr)
+        tx[outliers] = np.take(self.q1 + 1.5 * iqr, outliers[1])
+        return (tx - self.median) / iqr
+
+    def fit_transform(self, tx):
         """
         It computes the percentiles and the median for the given data sample.
 
         :param tx: np.array, with the data
         """
         # Robust standardization & outliers
+        tx = self.remove_empty_features(tx)
+        tx = self.remove_constant_features(tx)
         self.q1 = np.nanpercentile(tx, q=25, axis=0)
         self.median = np.nanpercentile(tx, q=50, axis=0)
         self.q3 = np.nanpercentile(tx, q=75, axis=0)
+
+        tx = self.standardize(tx)
+        tx, _ = self.treat_missing_data(tx)
+        return tx
 
     def transform(self, tx):
         """
@@ -87,37 +104,12 @@ class Standardization:
         :param tx: np.array, with the data
         :return: np.array with the standardized data
         """
-        iqr = self.q3 - self.q1
+        tx = self.remove_empty_features(tx)
+        tx = self.remove_constant_features(tx)
+        tx = self.standardize(tx)
+        tx, _ = self.treat_missing_data(tx)
+        return tx
 
-        outliers = np.where(tx > self.q3 + 1.5 * iqr)
-        tx[outliers] = np.take(self.q3 + 1.5 * iqr, outliers[1])
-        outliers = np.where(tx < self.q1 - 1.5 * iqr)
-        tx[outliers] = np.take(self.q1 + 1.5 * iqr, outliers[1])
-
-        return (tx - self.median) / iqr
-
-
-def preprocess(tx_train, tx_test):
-    # remove empty features
-    tx_train = remove_empty_features(tx_train)
-    tx_test = remove_empty_features(tx_test)
-
-    # remove constant features
-    tx_train = remove_constant_features(tx_train)
-    tx_test = remove_constant_features(tx_test)
-
-    # treat outliers
-    standardization = Standardization()
-    standardization.fit(tx_train)
-
-    tx_train = standardization.transform(tx_train)
-    tx_test = standardization.transform(tx_test)
-
-    # treat missing data
-    tx_train, tx_train_imputed = treat_missing_data(tx_train)
-    tx_test, tx_test_imputed = treat_missing_data(tx_test)
-
-    return tx_train, tx_test
 
 
 class FeatureEngineering:

@@ -16,17 +16,6 @@ DATA_TRAIN_PATH = "./../data/raw/train.csv"
 DATA_TEST_PATH = "./../data/raw/test.csv"
 
 
-# overwriting function for pipeline testing
-def reg_logistic_regression(y_train, X_train, lambda_,
-                                    initial_w, max_iters, gamma):
-
-    clf = LogisticRegression(max_iter = max_iters, penalty= 'l2', C = lambda_)
-    clf.fit(X_train, y_train)
-
-    w = clf.coef_[0]
-    loss = 1
-    return w, loss
-
 
 
 
@@ -199,7 +188,7 @@ def run_pipeline(X_test, X_train, y_test, y_train , degree,
     # Modelling
     initial_w = np.zeros((X_train.shape[1]))
     w, loss = reg_logistic_regression(y_train, X_train, lambda_,
-                                    initial_w, max_iter, gamma)
+                                    initial_w, int(max_iter), gamma)
     y_pred = predict_labels(w, X_test,1)
 
     return y_pred
@@ -214,7 +203,7 @@ def cross_validation(X, y, degree, num_top_vars, lambda_, gamma, max_iter, folds
     interval = int(num_rows / folds)
     indices = np.random.permutation(num_rows)
 
-    for fold in range(folds):
+    for fold in range(int(folds)):
         print(fold)
         test_indices = indices[fold*interval: (fold+1)*interval]
         train_indices = [i for i in indices if i not in test_indices]
@@ -237,16 +226,16 @@ def cross_validation(X, y, degree, num_top_vars, lambda_, gamma, max_iter, folds
 def tune_hyperparameters(X_train, y_train):
     degrees_list = [1,2,3,4,5,6,7,8]
     features_list = [3,4,5,6,7,8,9,10]
-    c_list =  [0.001, 0.1, 0.5, 1, 2, 10]
-    gamma_list = [0.001, 0.1, 0.5, 1, 2, 10]
-    max_iter_list = [100,500,1000]
-    folds_list = [5,10]
-    
+    c_list =  [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 1]
+    gamma_list = [0.0000001, 0.000001, 0.00001, 0.0001, 0.001, 0.01]
+    max_iter_list = [100,500,1000, 2000, 50000]
+    folds_list = [5,7,10]
+
     #degrees_list = [2,3]
     #features_list = [4]
     #c_list =  [0.001]
     #gamma_list = [0.001]
-    #max_iter_list = [100]
+    #max_iter_list = [10]
     #folds_list = [5]
 
     results_list = []
@@ -264,6 +253,7 @@ def tune_hyperparameters(X_train, y_train):
                             results = [degree, features, c, gamma,
                                         max_iter, fold, f1_mean,
                                         f1_std, acc_mean, acc_std]
+                            print(results)
                             results_list.append(results)
 
     return np.array(results_list)

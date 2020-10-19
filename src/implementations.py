@@ -89,7 +89,13 @@ class Models:
         :param tx: np. array of the features
         :return: np.array with the predicted labels
         """
-        return self.sigmoid(tx.dot(self.w))
+        threshold = 0.5
+
+        y_pred = np.dot(tx, self.w)
+        y_pred[np.where(y_pred <= threshold)] = 0
+        y_pred[np.where(y_pred > threshold)] = 1
+
+        return y_pred
 
     @staticmethod
     def sigmoid(t):
