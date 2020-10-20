@@ -85,23 +85,25 @@ def cross_validation(tx, y, folds, degrees, features, gamma, lambda_,
 
 def model_selection(tx, y, jet, verbose=False):
     model_parameters = {
-        'degrees_list': [1, 2, 3, 4, 5],
-        'epochs': [500, 1000, 10000],
-        'features_list': [3, 4, 5, 6, 7],
-        'folds': [5, 10],
-        'gamma': [0.0000001, 0.000001, 0.00001, 0.0001],
-        'lambda': [0.0000001, 0.000001, 0.00001, 0.0001]
+        'batch_size': [0],
+        'degrees_list': [1, 2, 4],
+        'epochs': [500],
+        'features_list': [4, 6, 8],
+        'folds': [5],
+        'gamma': [0.000001, 0.00001, 0.0001],
+        'lambda': [0.000001, 0.00001, 0.0001]
     }
 
-    model_parameters = {
-        'batch_size': [256],
-        'degrees_list': [2],
-        'epochs': [500],
-        'features_list': [4],
-        'folds': [10],
-        'gamma': [0.00001],
-        'lambda': [0.00001]
-    }
+    # model_parameters = {
+    #     'batch_size': [256],
+    #     'degrees_list': [2],
+    #     'epochs': [500],
+    #     'features_list': [4],
+    #     'folds': [10],
+    #     'gamma': [0.00001],
+    #     'lambda': [0.00001]
+    # }
+
     # get all the possible combinations of settings
     model_settings = settings_combinations(model_parameters)
 
@@ -110,7 +112,7 @@ def model_selection(tx, y, jet, verbose=False):
     best_model = {'f1': 0}
     results_list = []
 
-    for model_setting in model_settings:  # loop for mode hyper-parameter tuning
+    for idx, model_setting in enumerate(model_settings):  # loop for mode hyper-parameter tuning
 
         # Training
         batch_size = model_setting[0]
@@ -121,9 +123,10 @@ def model_selection(tx, y, jet, verbose=False):
         gamma = model_setting[5]
         lambda_ = model_setting[6]
 
-        print('\nCurrent setting running: K-folds: {folds}, gamma: {gamma}, '
-              'lambda: {lambda_}, batch_size: {batch_size}'.format(
-            folds=folds, gamma=gamma, lambda_=lambda_, batch_size=batch_size))
+        print('\nCurrent setting running ({model_setting}/{total_settings}): K-folds: {folds}, gamma: {gamma}, '
+              'lambda: {lambda_}, batch_size: {batch_size}, degrees: {degrees}, features: {features}'.format(
+            model_setting=idx + 1, total_settings=len(model_settings), folds=folds, gamma=gamma,
+            lambda_=lambda_, batch_size=batch_size, degrees=degrees, features=features))
 
         f1_mean, f1_std, acc_mean, acc_std = cross_validation(tx, y, folds, degrees, features, gamma, lambda_,
                                                               epochs, batch_size, verbose)
@@ -132,7 +135,7 @@ def model_selection(tx, y, jet, verbose=False):
                    f1_std, acc_mean, acc_std]
 
         results_list.append(results)
-        print('Avg F1 score on these settings: {f1:.4f}'.format(f1=f1_mean))
+        print('Avg F1 score on these settings: {f1:.6f}'.format(f1=f1_mean))
 
         # keep best model
         if best_model['f1'] < f1_mean:
