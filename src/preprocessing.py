@@ -6,6 +6,7 @@ Module description
 import numpy as np
 from implementations import Models
 
+
 def get_jet_data_split(y, tx, group):
     """
     Splits the given data set such that only the data points with a certain
@@ -14,13 +15,13 @@ def get_jet_data_split(y, tx, group):
 
     :param y: a numpy array representing the given labels
     :param tx: a numpy array representing the given features
-    :param jet_num: the certain value of the discrete feature jet number
+    :param group: the certain value of the discrete feature jet number
     :return:
         y_masked: numpy array of labels of data points having the specified jet number
         tx_masked: numpy array of features of data points having the specified jet number
         ids_masked: numpy array of ids of data points having the specified jet number
     """
-    inds = np.where(tx[:,22]==group)
+    inds = np.where(tx[:, 22] == group)
     tx_sub = tx[inds]
     y_sub = y[inds]
     return y_sub, tx_sub
@@ -140,7 +141,6 @@ class FeatureEngineering:
         w, loss = model.reg_logistic_regression(y, tX, 1e-6, initial_w, 100, 1e-6)
         top_features_list = np.argsort(-abs(w))[:int(n)]
         return top_features_list
-
 
     def fit_transform(self, tX, y, degree, num_top_vars):
         """
