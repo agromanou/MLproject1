@@ -94,15 +94,15 @@ def model_selection(tx, y, jet, verbose=False):
         'lambda': [0.000001, 0.00001, 0.0001]
     }
 
-    # model_parameters = {
-    #     'batch_size': [256],
-    #     'degrees_list': [2],
-    #     'epochs': [500],
-    #     'features_list': [4],
-    #     'folds': [10],
-    #     'gamma': [0.00001],
-    #     'lambda': [0.00001]
-    # }
+    model_parameters = {
+        'batch_size': [1],
+        'degrees_list': [2],
+        'epochs': [500],
+        'features_list': [4],
+        'folds': [10],
+        'gamma': [0.00001],
+        'lambda': [0.00001]
+    }
 
     # get all the possible combinations of settings
     model_settings = settings_combinations(model_parameters)
@@ -162,16 +162,28 @@ def main(jet, verbose=False):
         jets = [jet]
 
     # split data into 4 groups based on their value in the `jet` feature
+    columns = ["degrees", "features", "lambda_", "gamma", "epochs", "folds", "f1_mean","f1_std", "acc_mean", "acc_std"]
+    columns_str = ",".join(columns)
     for jet in jets:
         y, tx = get_jet_data_split(data_obj.y, data_obj.tx, jet)
 
-        print('\n' + '-' * 50 + '\n')
-        print('RUNNING MODEL SELECTION FOR JET {jet}'.format(jet=jet))
+        tx_no_mass, y_no_mass, tx_mass, y_mass = split_jet_by_mass(y, tx)
 
-        results = model_selection(tx, y, jet, verbose=verbose)
-        file_name = "./../results/gridsearch_results_{0}.csv".format(jet)
-        np.savetxt(file_name, results, delimiter=",")
+        print('\n' + '-' * 50 + '\n')
+        print('RUNNING MODEL SELECTION FOR JET {jet} without mass'.format(jet=jet))
+
+        results = model_selection(tx_no_mass, y_no_mass, jet, verbose=verbose)
+        file_name = "./../results/gridsearch_results_no_mass_{0}.csv".format(jet)
+        np.savetxt(file_name, results, delimiter=",", header = columns_str)
+
+        print('\n' + '-' * 50 + '\n')
+        print('RUNNING MODEL SELECTION FOR JET {jet} with mass'.format(jet=jet))
+
+        results = model_selection(tx_mass, y_mass, jet, verbose=verbose)
+        file_name = "./../results/gridsearch_results_with_mass_{0}.csv".format(jet)
+        np.savetxt(file_name, results, delimiter=",", header = columns_str)
+
 
 
 if __name__ == '__main__':
-    main(0, False)
+    main(-1, False)
