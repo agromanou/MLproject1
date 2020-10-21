@@ -6,10 +6,9 @@ Module description
 import numpy as np
 from implementations import Models
 
+
 def get_jet_data_split(y, tx, group):
-    """
-    """
-    inds = np.where(tx[:,22]==group)
+    inds = np.where(tx[:, 22] == group)
     tx_sub = tx[inds]
     y_sub = y[inds]
     return y_sub, tx_sub
@@ -141,6 +140,7 @@ class FeatureEngineering:
         w, loss = model.reg_logistic_regression(y, tX, 1e-7, initial_w, 1000, 1e-8)
         top_features_list = np.argsort(-abs(w))[:int(n)]
         return top_features_list
+
 
     def normalize(self, tX):
         return (tX- self.mean)/(self.std)
