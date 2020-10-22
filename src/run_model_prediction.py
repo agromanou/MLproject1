@@ -1,8 +1,9 @@
 import numpy as np
 
-from data_loader import DataLoader
-from preprocessing import *
-from implementations import *
+from .data_loader import DataLoader
+from .preprocessing import *
+from .implementations import *
+from .proj1_helpers import create_csv_submission
 
 
 def best_model_predictions(data_obj, jet):
@@ -34,7 +35,7 @@ def best_model_predictions(data_obj, jet):
     w, loss =  model.reg_logistic_regression(y, tx, lambda_, initial_w, max_iter, gamma)
     model.w = w
     pred = model.predict(tx_test)
-    return pred, ids_test
+    return ids_test, pred
 
 
 def main():
