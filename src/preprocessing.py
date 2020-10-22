@@ -4,7 +4,7 @@
 Module description
 """
 import numpy as np
-from .models import Models
+from models import Models
 
 
 def get_jet_data_split(y, tx, group):

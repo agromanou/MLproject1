@@ -148,7 +148,6 @@ class Models:
                 loss (float): corresponding loss value (cost function)
         '''
         threshold = 1e-8
-        w = initial_w
         ws = [initial_w]
         losses = []
         w = initial_w

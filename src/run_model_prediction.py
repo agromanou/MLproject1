@@ -1,25 +1,25 @@
 import numpy as np
 
-from .data_loader import DataLoader
-from .preprocessing import *
-from .models import *
-from .proj1_helpers import create_csv_submission
+from data_loader import DataLoader
+from preprocessing import *
+from models import *
+from proj1_helpers import create_csv_submission
 
 
 def best_model_predictions(data_obj, jet):
     y, tx = get_jet_data_split(data_obj.y, data_obj.tx, jet)
     ids_test,tx_test = get_jet_data_split(data_obj.ids_test,data_obj.test, jet)
 
-    file_name ="./../results/gridsearch/results_{0}.csv".format(jet)
-    results= np.genfromtxt(file_name, delimiter=",")
+    file_name ="./../results/gridsearch/gridsearch_results_{0}.csv".format(jet)
+    results= np.genfromtxt(file_name, delimiter=",", skip_header=True)
 
     top_row = np.argmax(results[:,6])
     best_params = results[top_row]
 
     degrees = int(best_params[0])
     features =  int(best_params[1])
-    lambda_ = int(best_params[2])
-    gamma = int(best_params[3])
+    lambda_ = best_params[2]
+    gamma = best_params[3]
     max_iter = int(best_params[4])
 
     data_cleaner = DataCleaning()
