@@ -34,8 +34,8 @@ def best_model_predictions(data_obj, jet):
 def get_predictions(best_params, tx, tx_test, y):
     degrees = int(best_params[0])
     features = int(best_params[1])
-    lambda_ = int(best_params[2])
-    gamma = int(best_params[3])
+    lambda_ = best_params[2]
+    gamma = best_params[3]
     max_iter = int(best_params[4])
 
     data_cleaner = DataCleaning()
