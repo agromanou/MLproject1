@@ -5,10 +5,10 @@ Module description
 """
 import itertools as it
 
-from data_loader import DataLoader
-from preprocessing import *
-from implementations import Models
-from evaluation import Evaluation
+from .data_loader import DataLoader
+from .preprocessing import *
+from .models import Models
+from .evaluation import Evaluation
 
 
 def settings_combinations(search_space):

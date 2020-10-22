@@ -2,7 +2,7 @@ import numpy as np
 
 from .data_loader import DataLoader
 from .preprocessing import *
-from .implementations import *
+from .models import *
 from .proj1_helpers import create_csv_submission
 
 
