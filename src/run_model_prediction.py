@@ -2,15 +2,16 @@ import numpy as np
 
 from data_loader import DataLoader
 from preprocessing import *
-from implementations import *
+from models import *
+from proj1_helpers import create_csv_submission
 
 
 def best_model_predictions(data_obj, jet):
     y, tx = get_jet_data_split(data_obj.y, data_obj.tx, jet)
     ids_test,tx_test = get_jet_data_split(data_obj.ids_test,data_obj.test, jet)
 
-    tx_no_mass, y_no_mass, tx_mass, y_mass = split_jet_by_mass(y, tx)
-    tx_test_no_mass, ids_test_no_mass, tx_test_mass, ids_test_mass = split_jet_by_mass(ids_test, tx_test)
+    file_name ="./../results/gridsearch/gridsearch_results_{0}.csv".format(jet)
+    results= np.genfromtxt(file_name, delimiter=",", skip_header=True)
 
     file_name_no_mass ="./../results/gridsearch_results_no_mass_{0}.csv".format(jet)
     results_no_mass= np.genfromtxt(file_name_no_mass, delimiter=",", skip_header=1)
@@ -55,7 +56,7 @@ def get_predictions(best_params, tx, tx_test, y):
     model.w = w
     pred = model.predict(tx_test)
 
-    return pred
+    return ids_test, pred
 
 
 def main():
