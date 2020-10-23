@@ -8,10 +8,37 @@ from models import Models
 
 
 def get_jet_data_split(y, tx, group):
+    """
+
+    :param y:
+    :param tx:
+    :param group:
+    :return:
+    """
     inds = np.where(tx[:, 22] == group)
     tx_sub = tx[inds]
     y_sub = y[inds]
     return y_sub, tx_sub
+
+
+def get_mass_data_split(y, tx, mass):
+    """
+
+    :param y:
+    :param tx:
+    :param mass:
+    :return:
+    """
+    if mass:
+        ids = np.where(tx[:, 0] != -999)
+    else:
+        ids = np.where(tx[:, 0] == -999)
+
+    tx_sub = tx[ids]
+    y_sub = y[ids]
+
+    return tx_sub[:, 1:], y_sub
+
 
 def split_jet_by_mass(y, tx):
     no_mass_inds = np.where(tx[:, 0] == -999)
@@ -44,7 +71,6 @@ class DataCleaning:
         tx = tx[:, ~np.all(np.isnan(tx), axis=0)]
         return tx
 
-
     def remove_constant_features(self, tx):
         """
 
@@ -57,7 +83,6 @@ class DataCleaning:
             self.constant_columns = constant_ind
         tx = np.delete(tx, self.constant_columns , axis=1)
         return tx
-
 
     def treat_outliers(self, tx):
         iqr = self.q3 - self.q1
@@ -121,7 +146,6 @@ class DataCleaning:
         return tx
 
 
-
 class FeatureEngineering:
     def __init__(self):
         self.top_features_list = None
@@ -152,7 +176,6 @@ class FeatureEngineering:
         w, loss = model.reg_logistic_regression(y, tX, 1e-7, initial_w, 1000, 1e-8)
         top_features_list = np.argsort(-abs(w))[:int(n)]
         return top_features_list
-
 
     def normalize(self, tX):
         return (tX- self.mean)/(self.std)

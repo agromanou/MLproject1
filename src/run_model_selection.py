@@ -85,24 +85,24 @@ def cross_validation(tx, y, folds, degrees, features, gamma, lambda_,
 
 def model_selection(tx, y, jet, verbose=False):
     model_parameters = {
-        'batch_size': [0],
-        'degrees_list': [1, 2, 4],
-        'epochs': [500],
-        'features_list': [4, 6, 8],
-        'folds': [5],
+        'batch_size': [0, 1],
+        'degrees_list': [8, 10, 12],
+        'epochs': [10000],
+        'features_list': [6, 8],
+        'folds': [10],
         'gamma': [0.000001, 0.00001, 0.0001],
         'lambda': [0.000001, 0.00001, 0.0001]
     }
 
-    model_parameters = {
-        'batch_size': [1],
-        'degrees_list': [2],
-        'epochs': [500],
-        'features_list': [4],
-        'folds': [10],
-        'gamma': [0.00001],
-        'lambda': [0.00001]
-    }
+    # model_parameters = {
+    #     'batch_size': [1],
+    #     'degrees_list': [2],
+    #     'epochs': [10000],
+    #     'features_list': [4],
+    #     'folds': [10],
+    #     'gamma': [0.000001, 0.00001, 0.0001],
+    #     'lambda': [0.000001, 0.00001, 0.0001]
+    # }
 
     # get all the possible combinations of settings
     model_settings = settings_combinations(model_parameters)
@@ -162,7 +162,7 @@ def main(jet, verbose=False):
         jets = [jet]
 
     # split data into 4 groups based on their value in the `jet` feature
-    columns = ["degrees", "features", "lambda_", "gamma", "epochs", "folds", "f1_mean","f1_std", "acc_mean", "acc_std"]
+    columns = ["degrees", "features", "lambda_", "gamma", "epochs", "folds", "f1_mean", "f1_std", "acc_mean", "acc_std"]
     columns_str = ",".join(columns)
     for jet in jets:
         y, tx = get_jet_data_split(data_obj.y, data_obj.tx, jet)
@@ -182,7 +182,6 @@ def main(jet, verbose=False):
         results = model_selection(tx_mass, y_mass, jet, verbose=verbose)
         file_name = "./../results/gridsearch_results_with_mass_{0}.csv".format(jet)
         np.savetxt(file_name, results, delimiter=",", header = columns_str)
-
 
 
 if __name__ == '__main__':

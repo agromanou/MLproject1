@@ -1,87 +1,130 @@
-import numpy as np
 
 from data_loader import DataLoader
 from preprocessing import *
 from models import *
+from implementations import *
 from proj1_helpers import create_csv_submission
 
 
-def best_model_predictions(data_obj, jet):
+def best_model_predictions(data_obj, jet, mass):
+    """
+    This method splits the data based on the jet value and the mass existence (8 partitions),
+    trains the model and gets the predictions on the test dataset.
+
+    :param data_obj: DataLoader obj
+    :param jet: int, the jet value
+    :return:
+        pred:
+        ids:
+    """
+    print('\n\nTraining model for jet {jet} with mass {mass}'.format(jet=jet, mass=mass))
+
+    # Split data based on jet value for train and val datasets
     y, tx = get_jet_data_split(data_obj.y, data_obj.tx, jet)
-    ids_test,tx_test = get_jet_data_split(data_obj.ids_test,data_obj.test, jet)
+    ids_test, tx_test = get_jet_data_split(data_obj.ids_test, data_obj.test, jet)
 
-    file_name ="./../results/gridsearch/gridsearch_results_{0}.csv".format(jet)
-    results= np.genfromtxt(file_name, delimiter=",", skip_header=True)
+    if mass == 0 or mass == 1:
+        # Split data based on mass existence for train and val datasets
+        tx, y = get_mass_data_split(y, tx, mass)
+        tx_test, ids_test = get_mass_data_split(ids_test, tx_test, mass)
 
-    file_name_no_mass ="./../results/gridsearch_results_no_mass_{0}.csv".format(jet)
-    results_no_mass= np.genfromtxt(file_name_no_mass, delimiter=",", skip_header=1)
+    print('Train data size: {train}  |  Test data size: {test}'.format(train=len(tx), test=len(tx_test)))
 
-    top_row_no_mass = np.argmax(results_no_mass[:,6])
-    best_params_no_mass = results_no_mass[top_row_no_mass]
+    # Read hyper-parameter tuning results for a specific jet with specific mass
+    file_name_with_tuning_results = "./../results/gridsearch_results_jet{jet}_mass{mass}.csv".format(jet=jet,
+                                                                                                     mass=mass)
+    hyper_params_results = np.genfromtxt(file_name_with_tuning_results, delimiter=",", skip_header=1)
 
-    pred_no_mass = get_predictions(best_params_no_mass, tx_no_mass, tx_test_no_mass, y_no_mass)
+    # Select best setting based on f1 score (6th column in the file)
+    best_hyper_params_indx = np.argmax(hyper_params_results[:, 6])
+    best_hyper_params = hyper_params_results[best_hyper_params_indx]
 
-    file_name_with_mass = "./../results/gridsearch_results_with_mass_{0}.csv".format(jet)
-    results_with_mass = np.genfromtxt(file_name_with_mass, delimiter=",", skip_header=1)
+    # Train and test the model
+    preds = get_predictions(best_hyper_params, tx, tx_test, y)
 
-    top_row_with_mass = np.argmax(results_with_mass[:, 6])
-    best_params_with_mass = results_with_mass[top_row_with_mass]
-
-    pred_with_mass = get_predictions(best_params_with_mass, tx_mass, tx_test_mass, y_mass)
-
-    return pred_no_mass, ids_test_no_mass, pred_with_mass, ids_test_mass
+    return preds, ids_test
 
 
-def get_predictions(best_params, tx, tx_test, y):
-    degrees = int(best_params[0])
-    features = int(best_params[1])
-    lambda_ = best_params[2]
-    gamma = best_params[3]
-    max_iter = int(best_params[4])
+def get_predictions(params, tx, tx_test, y):
+    """
+    It performs the training on the full training dataset with the provided hyper-parameters,
+    and applies the trained model to the test dataset to get predictions.
 
+    :param params: list with the hyper-parameter setting
+    :param tx: np.array of the train dataset
+    :param tx_test: np.array of the test dataset
+    :param y: np.array of the labels of the train dataset
+    :return:
+        pred: np.array with the predicted labels
+    """
+    degrees = int(params[0])
+    features = int(params[1])
+    lambda_ = params[2]
+    gamma = params[3]
+    max_iter = int(params[4])
+
+    print('with hyper-parameters: degrees: {degrees}, features: {features}, lambda_: {lambda_}, '
+          'gamma: {gamma}, max_iter: {max_iter}'.format(degrees=degrees, features=features, lambda_=lambda_,
+                                                        gamma=gamma, max_iter=max_iter))
+
+    print('Feature engineering')
+    # Clean the data (missing values, constant features, outliers, standardization)
     data_cleaner = DataCleaning()
-
     tx = data_cleaner.fit_transform(tx)
     tx_test = data_cleaner.transform(tx_test)
 
+    print('Training')
+    # Create new features (polynomial expansion, feature interaction)
     feature_generator = FeatureEngineering()
-
     tx = feature_generator.fit_transform(tx, y, degrees, features)
     tx_test = feature_generator.transform(tx_test)
 
+    # Train on all the training dataset and predict on test set
     initial_w = np.zeros((tx.shape[1]))
     model = Models()
-
     w, loss = model.reg_logistic_regression(y, tx, lambda_, initial_w, max_iter, gamma)
     model.w = w
     pred = model.predict(tx_test)
 
-    return ids_test, pred
+    return pred
 
 
-def main():
+def main(with_mass=True):
+    """
+    The main function that initializes the final training and prediction of the proposed models.
+    """
+    # Load train and test datasets
     data_obj = DataLoader()
 
-    # ids_test_sub_0, y_pred_0  = best_model_predictions(data_obj, 0)
-    # ids_test_sub_1, y_pred_1  = best_model_predictions(data_obj, 1)
-    # ids_test_sub_2, y_pred_2  = best_model_predictions(data_obj, 2)
-    # ids_test_sub_3, y_pred_3  = best_model_predictions(data_obj, 3)
+    ids = list()
+    preds = list()
 
-    y_pred_0_no_mass, ids_test_sub_0_no_mass, y_pred_0_with_mass, ids_test_sub_0_with_mass = best_model_predictions(data_obj, 0)
-    y_pred_1_no_mass, ids_test_sub_1_no_mass, y_pred_1_with_mass, ids_test_sub_1_with_mass = best_model_predictions(
-        data_obj, 1)
-    y_pred_2_no_mass, ids_test_sub_2_no_mass, y_pred_2_with_mass, ids_test_sub_2_with_mass = best_model_predictions(
-        data_obj, 2)
-    y_pred_3_no_mass, ids_test_sub_3_no_mass, y_pred_3_with_mass, ids_test_sub_3_with_mass = best_model_predictions(
-        data_obj, 3)
+    for jet in range(4):  # for each jet
+        if with_mass:
+            for mass in range(2):  # for each mass
 
-    ids_all = np.concatenate((ids_test_sub_0_no_mass, ids_test_sub_1_no_mass, ids_test_sub_2_no_mass, ids_test_sub_3_no_mass, ids_test_sub_0_with_mass, ids_test_sub_1_with_mass, ids_test_sub_2_with_mass, ids_test_sub_3_with_mass), axis = 0)
-    preds_all = np.concatenate((y_pred_0_no_mass ,y_pred_1_no_mass, y_pred_2_no_mass, y_pred_3_no_mass, y_pred_0_with_mass ,y_pred_1_with_mass, y_pred_2_with_mass, y_pred_3_with_mass),axis = 0)
+                # For each jet value train the respective model and get predictions
+                y_pred, ids_test = best_model_predictions(data_obj=data_obj, jet=jet, mass=mass)
+                ids.append(ids_test)
+                preds.append(y_pred)
+        else:
+            # For each jet value train the respective model and get predictions
+            y_pred, ids_test = best_model_predictions(data_obj=data_obj, jet=jet, mass=None)
+            ids.append(ids_test)
+            preds.append(y_pred)
 
+    # Concatenate all predictions along with their ids
+    ids_all = np.concatenate(ids, axis=0)
+    preds_all = np.concatenate(preds, axis=0)
+
+    # Change class 0 to -1 label
     preds_all = np.where(preds_all == 0, -1, preds_all)
+
+    # Write predictions to file
     OUTPUT_PATH = './../results/predictions/best_model_predictions.csv'
-    create_csv_submission(ids_all, preds_all,OUTPUT_PATH)
+    create_csv_submission(ids_all, preds_all, OUTPUT_PATH)
+    print("Predictions have been created.")
 
 
 if __name__ == '__main__':
-    main()
+    main(with_mass=True)

@@ -27,27 +27,6 @@ class DataLoader:
         self.ids_test = None
         self._load_data(sub_sample)
 
-    def get_datasets(self):
-        """
-        Getter method to get all datasets in one dict.
-        """
-        data = {
-            'train': {
-                'tx': self.tx,
-                'y': self.y
-            },
-            'test_labeled': {
-                'tx_te': self.tx_test_labeled,
-                'y_te': self.y_test_labeled
-            },
-            'test': {
-                'tx': self.test,
-                'ids': self.ids_test
-            },
-        }
-
-        return data
-
     def _load_data(self, sub_sample=0):
         """
         Loads the train and test data needed.
@@ -85,7 +64,7 @@ class DataLoader:
         self.test = test
         self.ids_test = ids_test
 
-
+        print('Data has been loaded')
 
     @staticmethod
     def split_data(x, y, ratio, seed=1):
@@ -123,19 +102,3 @@ class DataLoader:
         y_te = y[index_te]
 
         return x_tr, x_te, y_tr, y_te
-
-
-    @staticmethod
-    def create_csv_submission(ids, y_pred, name):
-        """
-        Creates an output file in csv format for submission to kaggle
-        Arguments: ids (event ids associated with each prediction)
-                   y_pred (predicted class labels)
-                   name (string name of .csv output file to be created)
-        """
-        with open(name, 'w') as csvfile:
-            fieldnames = ['Id', 'Prediction']
-            writer = csv.DictWriter(csvfile, delimiter=",", fieldnames=fieldnames)
-            writer.writeheader()
-            for r1, r2 in zip(ids, y_pred):
-                writer.writerow({'Id': int(r1), 'Prediction': int(r2)})

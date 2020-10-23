@@ -93,7 +93,7 @@ class Models:
         """
         threshold = 0.5
 
-        y_pred = np.dot(tx, self.w)
+        y_pred = self.sigmoid(np.dot(tx, self.w))
         y_pred[np.where(y_pred <= threshold)] = 0
         y_pred[np.where(y_pred > threshold)] = 1
 
@@ -188,41 +188,3 @@ class Models:
             end_index = min((batch_num + 1) * batch_size, data_size)
             if start_index != end_index:
                 yield shuffled_y[start_index:end_index], shuffled_tx[start_index:end_index]
-
-    # def least_squares_SGD(self,y, tx, initial_w, max_iters, gamma):
-    #     '''
-    #     linear regression using stochastic gradient descent
-    #         parameters:
-    #             y (np.array): label or outcome
-    #             tx (np.array): matrix of features
-    #             initial_w (np.array): initial weight vector
-    #             max_iters (int): number of steps to run
-    #             gamma: step-size
-    #
-    #         returns:
-    #             w (np.array): last weight vector of the method
-    #             loss (float): corresponding loss value (cost function)
-    #     '''
-    #         # Define parameters to store w and loss
-    #     ws = [initial_w]
-    #     losses = []
-    #     w = initial_w
-    #
-    #     for n_iter in range(max_iters):
-    #         for y_batch, tx_batch in self.batch_iter(y, tx, batch_size=batch_size, num_batches=1):
-    #             # compute a stochastic gradient and loss
-    #             grad, _ = self.compute_stoch_gradient(y_batch, tx_batch, w)
-    #             # update w through the stochastic gradient update
-    #             w = w - gamma * grad
-    #             # calculate loss
-    #             loss = self.compute_loss(y, tx, w)
-    #             # store w and loss
-    #             ws.append(w)
-    #             losses.append(loss)
-    #
-    #         print("SGD({bi}/{ti}): loss={l}, w0={w0}, w1={w1}".format(
-    #               bi=n_iter, ti=max_iters - 1, l=loss, w0=w[0], w1=w[1]))
-    #
-    #     loss = losses[-1]
-    #     w = ws[-1]
-    #     return w, loss

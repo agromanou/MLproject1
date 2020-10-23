@@ -1,22 +1,21 @@
-import numpy as np
-from .implementation_helpers import *
+from costs import *
+
 
 # The six compulsory learning methods
 
 def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     """
     Least squares regression using gradient descent
-    Args:
-        y: labels
-        tx: features
-        initial_w: initial weights
-        max_iters: maximum number of iterations
-        gamma: step size
-    Returns:
+
+    :param y: labels
+    :param tx: features
+    :param initial_w: initial weights
+    :param max_iters: maximum number of iterations
+    :param gamma: step size
+    :returns:
         w: optimal weight
         loss: optimal loss
     """
-
     weights = [initial_w]
     losses = []
     w = initial_w
@@ -34,20 +33,20 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
                 break
     return weights[-1], losses[-1]
 
+
 def least_squares_SGD(y, tx, initial_w, max_iters, gamma):
     """
     Least squares regression using stochastic gradient descent
-    Args:
-        y: labels
-        tx: features
-        initial_w: initial weights
-        max_iters: maximum number of iterations
-        gamma: step size
-    Returns:
+
+    :param y: labels
+    :param tx: features
+    :param initial_w: initial weights
+    :param max_iters: maximum number of iterations
+    :param gamma: step size
+    :returns:
         w: optimal weight
         loss: optimal loss
     """
-
     weights = [initial_w]
     losses = []
     w = initial_w
@@ -68,17 +67,18 @@ def least_squares_SGD(y, tx, initial_w, max_iters, gamma):
         weights.append(w)
         losses.append(loss)
         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < thres:
-            break # convergence criterion met
+            break  # convergence criterion met
     return weights[-1], losses[-1]
+
 
 def least_squares(y, tx):
     """
     Least squares regression
-    Args:
-        y: labels
-        tx: features
-    Returns:
-        w: optimal weight
+
+    :param y: labels
+    :param tx: features
+    :return:
+        w: optimal weights
         loss: optimal loss
     """
     c_m = tx.T.dot(tx)
@@ -90,14 +90,15 @@ def least_squares(y, tx):
 
     return w, loss
 
+
 def ridge_regression(y, tx, lambda_):
     """
     Ridge regression using normal equations
-    Args:
-        y: labels
-        tx: features
-        lambda_: regularization hyperparameter
-    Returns:
+
+    :param y: labels
+    :param tx: features
+    :param lambda_: regularization hyper-parameter
+    :return:
         w: optimal weight
         loss: optimal loss
     """
@@ -110,16 +111,17 @@ def ridge_regression(y, tx, lambda_):
 
     return w, loss
 
+
 def logistic_regression(y, tx, initial_w, max_iters, gamma):
     """
     Logistic regression using stochastic gradient descent
-    Args:
-        y: labels
-        tx: features
-        initial_w: initial weights vector
-        max_iters: maximum number of iterations
-        gamma: step size
-    Returns:
+
+    :param y: labels
+    :param tx: features
+    :param initial_w: initial weights vector
+    :param max_iters: maximum number of iterations
+    :param gamma: step size
+    :returns:
         w: optimal weight
         loss: optimal loss
     """
@@ -138,21 +140,20 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma):
                 break
     return weights[-1], losses[-1]
 
+
 def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     """
     Regularized logistic regression using gradient descent
-    Args:
-        y: labels
-        tx: features
-        lambda_: regularization hyperparameter
-        initial_w: initial weights
-        max_iters: maximum number of iterations
-        gamma: step size
-    Returns:
+    :param y: labels
+    :param tx: features
+    :param lambda_: regularization hyperparameter
+    :param initial_w: initial weights
+    :param max_iters: maximum number of iterations
+    :param gamma: step size
+    :returns:
         w: optimal weight
         loss: optimal loss
     """
-
     weights = [initial_w]
     losses = []
     w = initial_w
