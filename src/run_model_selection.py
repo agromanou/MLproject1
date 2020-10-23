@@ -64,24 +64,15 @@ def cross_validation(tx, y, folds, degrees, features, gamma, lambda_,
 
 
 def model_selection(tx, y, jet, verbose=False):
-    model_parameters = {
-        'degrees_list': [1, 2, 4],
-        'epochs': [500],
-        'features_list': [4, 6, 8],
-        'folds': [5],
-        'gamma': [0.000001, 0.00001, 0.0001],
-        'lambda': [0.000001, 0.00001, 0.0001]
-    }
 
     model_parameters = {
-     'degrees_list': [1],
-     'epochs': [100],
-     'features_list': [1],
-     'folds': [2],
-     'gamma': [0.00001],
-     'lambda': [0.00001]
+     'degrees_list': list(np.linspace(1,10,10, dtype=int)),
+     'epochs': [100, 200, 500, 1000, 2000],
+     'features_list': list(np.linspace(1,10,10, dtype=int)),
+     'folds': [3,5,10,20],
+     'gamma': list(10.**np.arange(-12, 3)),
+     'lambda': list(10.**np.arange(-12, 3))
     }
-
 
     model_settings = settings_combinations(model_parameters)
 
