@@ -4,8 +4,7 @@
 Module description
 """
 import numpy as np
-from models import Models
-
+from implementations import reg_logistic_regression
 
 def get_jet_data_split(y, tx, group):
     """
@@ -140,8 +139,7 @@ class FeatureEngineering:
 
     def select_top_vars(self, tX, y, n=5):
         initial_w =  np.zeros((tX.shape[1]))
-        model = Models()
-        w, loss = model.reg_logistic_regression(y, tX, 1e-7, initial_w, 1000, 1e-8)
+        w, loss = reg_logistic_regression(y, tX, 1e-6, initial_w, 1000, 1e-6)
         top_features_list = np.argsort(-abs(w))[:int(n)]
         return top_features_list
 

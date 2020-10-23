@@ -66,39 +66,39 @@ class DataLoader:
 
         print('Data has been loaded')
 
-    @staticmethod
-    def split_data(x, y, ratio, seed=1):
-        """
-        Shuffle the dataset and then split them based on the split ratio.
-        The split of the data is always rounded up to the next integer.
-        e.g
-            number of samples: 5, and ration: 0.5
-            split: 5 * 0.5 = 2.5 => 3
 
-        :param x: a numpy array, representing the given features
-        :param y: a numpy array, representing the given labels
-        :param ratio: float, the ratio of the training data
-        :param seed: int, seed number for the shuffling
-        :return:
-            x_tr: a numpy array representing the given features on the training set
-            y_tr: a numpy array representing the labels on the training set
-            x_te: a numpy array representing the given features on the testing set
-            y_te: a numpy array representing the labels on the testing set
+def split_data(x, y, ratio, seed=1):
+    """
+    Shuffle the dataset and then split them based on the split ratio.
+    The split of the data is always rounded up to the next integer.
+    e.g
+        number of samples: 5, and ration: 0.5
+        split: 5 * 0.5 = 2.5 => 3
 
-        """
-        # set seed
-        np.random.seed(seed)
-        # generate random indices
-        num_rows = len(y)
-        # shuffle indexes and then split them
-        indices = np.random.permutation(num_rows)
-        index_split = int(np.floor(ratio * num_rows))
-        index_tr = indices[: index_split]
-        index_te = indices[index_split:]
-        # create split to data
-        x_tr = x[index_tr]
-        x_te = x[index_te]
-        y_tr = y[index_tr]
-        y_te = y[index_te]
+    :param x: a numpy array, representing the given features
+    :param y: a numpy array, representing the given labels
+    :param ratio: float, the ratio of the training data
+    :param seed: int, seed number for the shuffling
+    :return:
+        x_tr: a numpy array representing the given features on the training set
+        y_tr: a numpy array representing the labels on the training set
+        x_te: a numpy array representing the given features on the testing set
+        y_te: a numpy array representing the labels on the testing set
 
-        return x_tr, x_te, y_tr, y_te
+    """
+    # set seed
+    np.random.seed(seed)
+    # generate random indices
+    num_rows = len(y)
+    # shuffle indexes and then split them
+    indices = np.random.permutation(num_rows)
+    index_split = int(np.floor(ratio * num_rows))
+    index_tr = indices[: index_split]
+    index_te = indices[index_split:]
+    # create split to data
+    x_tr = x[index_tr]
+    x_te = x[index_te]
+    y_tr = y[index_tr]
+    y_te = y[index_te]
+
+    return x_tr, x_te, y_tr, y_te

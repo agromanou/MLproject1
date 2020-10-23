@@ -3,7 +3,7 @@ from costs import *
 
 # The six compulsory learning methods
 
-def least_squares_GD(y, tx, initial_w, max_iters, gamma):
+def least_squares_GD(y, tx, initial_w, max_iters, gamma, verbose=True):
     """
     Least squares regression using gradient descent
 
@@ -26,15 +26,21 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
         gradient_vector = get_gradient(tx, error_vector)
         loss = get_mse(error_vector)
         w = w - gamma * gradient_vector
+
+        if i % 100 == 0:
+            print("Current iteration={i}, loss={loss:.3f}"
+            .format(i=i, loss=loss)) if verbose else None
+
         weights.append(w)
         losses.append(loss)
         if len(losses) > 1:
             if np.abs(losses[-1] - losses[-2]) < thres:
+                print("threshold reached")
                 break
     return weights[-1], losses[-1]
 
 
-def least_squares_SGD(y, tx, initial_w, max_iters, gamma):
+def least_squares_SGD(y, tx, initial_w, max_iters, gamma, verbose= True):
     """
     Least squares regression using stochastic gradient descent
 
@@ -64,9 +70,16 @@ def least_squares_SGD(y, tx, initial_w, max_iters, gamma):
         loss = get_mse(error_vector)
 
         w = w - gamma * gradient_vector
+
+
+        if i % 100 == 0:
+            print("Current iteration={i}, loss={loss:.3f}"
+            .format(i=i, loss=loss)) if verbose else None
+
         weights.append(w)
         losses.append(loss)
         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < thres:
+            print("threshold reached")
             break  # convergence criterion met
     return weights[-1], losses[-1]
 
@@ -112,7 +125,7 @@ def ridge_regression(y, tx, lambda_):
     return w, loss
 
 
-def logistic_regression(y, tx, initial_w, max_iters, gamma):
+def logistic_regression(y, tx, initial_w, max_iters, gamma, verbose=True):
     """
     Logistic regression using stochastic gradient descent
 
@@ -133,6 +146,11 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma):
         loss = get_logistic_loss(y, tx, w)
         gradient_vector = get_logistic_gradient(y, tx, w)
         w = w - gamma * gradient_vector
+
+        if i % 100 == 0:
+            print("Current iteration={i}, loss={loss:.3f}"
+            .format(i=i, loss=loss)) if verbose else None
+
         weights.append(w)
         losses.append(loss)
         if len(losses) > 1:

@@ -4,7 +4,7 @@ def get_error_vector(y, tx, w):
     """
     Computes the error vector
     Args:
-        y: labels 
+        y: labels
         tx: features
         w: weights
     Returns:
@@ -32,7 +32,7 @@ def get_gradient(tx, error_vector):
         gradient: the gradient vector
     """
     return - tx.T.dot(error_vector) / float(error_vector.size)
-    
+
 def sigmoid(t):
     """
     Applies the sigmoid function to its input
@@ -47,20 +47,22 @@ def get_logistic_loss(y, tx, w):
     """
     Computes the logistic loss
     Args:
-        y: labels 
+        y: labels
         tx: features
         w: weights
     Returns:
         loss: logistic loss
     """
     inner = tx.dot(w)
-    return np.sum(np.log(1. + np.exp(inner)) - y * inner)
+    pred = sigmoid(inner)
+    loss =  y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
+    return np.squeeze(- loss)
 
 def get_logistic_gradient(y, tx, w):
     """
     Computes the gradient of the logistic regression loss function.
     Args:
-        y: labels 
+        y: labels
         tx: features
         w: weights
     Returns:
@@ -72,13 +74,13 @@ def penalized_logistic_regression(y, tx, w, lambda_):
     """
     Performs logistic regression with a penalization term
     Args:
-        y: labels 
+        y: labels
         tx: features
         w: weights
     Returns:
         loss: the penalized regression loss
         logistic_gradient: the penalized regression gradient
     """
-    loss = get_logistic_loss(y, tx, w) + (lambda_ / 2.) * w.T.dot(w)
+    loss = get_logistic_loss(y, tx, w) + (lambda_ ) * np.squeeze(w.T.dot(w))
     gradient = get_logistic_gradient(y, tx, w) + lambda_ * w
     return loss, gradient
