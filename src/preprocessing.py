@@ -21,38 +21,6 @@ def get_jet_data_split(y, tx, group):
     return y_sub, tx_sub
 
 
-def get_mass_data_split(y, tx, mass):
-    """
-
-    :param y:
-    :param tx:
-    :param mass:
-    :return:
-    """
-    if mass:
-        ids = np.where(tx[:, 0] != -999)
-    else:
-        ids = np.where(tx[:, 0] == -999)
-
-    tx_sub = tx[ids]
-    y_sub = y[ids]
-
-    return tx_sub[:, 1:], y_sub
-
-
-def split_jet_by_mass(y, tx):
-    no_mass_inds = np.where(tx[:, 0] == -999)
-    mass_inds = np.where(tx[:, 0] != -999)
-
-    tx_no_mass = tx[no_mass_inds]
-    y_no_mass = y[no_mass_inds]
-
-    tx_mass = tx[mass_inds]
-    y_mass = y[mass_inds]
-
-    return tx_no_mass[:, 1:], y_no_mass, tx_mass[:, 1:], y_mass
-
-
 class DataCleaning:
     def __init__(self):
         self.q1 = None

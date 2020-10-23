@@ -141,7 +141,8 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma):
     return weights[-1], losses[-1]
 
 
-def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters,
+                                        gamma, verbose = False):
     """
     Regularized logistic regression using gradient descent
     :param y: labels
@@ -150,6 +151,7 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     :param initial_w: initial weights
     :param max_iters: maximum number of iterations
     :param gamma: step size
+    :param verbose: prints losses every 100 iterations
     :returns:
         w: optimal weight
         loss: optimal loss
@@ -163,6 +165,10 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
         w = w - gamma * gradient_vector
         weights.append(w)
         losses.append(loss)
+
+        if i % 100 == 0:
+            print("Current iteration={i}, loss={loss:.3f}"
+            .format(i=i, loss=loss)) if verbose else None
 
         if len(losses) > 1:
             if np.abs(losses[-1] - losses[-2]) < thres:
