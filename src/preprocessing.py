@@ -8,10 +8,11 @@ from implementations import reg_logistic_regression
 
 def get_jet_data_split(y, tx, group):
     """
-
-    :param y:
-    :param tx:
-    :param group:
+    Given a group (jet number) returns the subset of y and tx
+    corresponding to that group
+    :param y: np.array with labels
+    :param tx: np.array with features
+    :param group: int indicating jet number
     :return:
     """
     inds = np.where(tx[:, 22] == group)
@@ -21,6 +22,12 @@ def get_jet_data_split(y, tx, group):
 
 
 class DataCleaning:
+    """
+    This class is responsible for cleaning the data.
+    The training set is meant to fit the global values (q1, q3, median, etc)
+    to be then used to transform the training and testing set.
+    """
+
     def __init__(self):
         self.q1 = None
         self.q3 = None
@@ -31,8 +38,8 @@ class DataCleaning:
         """
         Finds the empty features presented in the dataset and removes them.
 
-        :param tx: a numpy array representing the given features
-        :return: a numpy array representing the cleaned given features
+        :param tx: np.array with the features
+        :return tx: np.array with the cleaned features
         """
         tx = np.where(tx == -999, np.NaN, tx)
         tx = tx[:, ~np.all(np.isnan(tx), axis=0)]
@@ -40,9 +47,10 @@ class DataCleaning:
 
     def remove_constant_features(self, tx):
         """
+        Removes columns that have zero variance
 
-        :param tx: a numpy array representing the given features
-        :return: a numpy array representing the cleaned given features
+        :param tx: np.array with the features
+        :return tx: np.array with the cleaned features
         """
         if self.constant_columns is None:
             col_std = np.nanstd(tx, axis=0)
@@ -52,6 +60,17 @@ class DataCleaning:
         return tx
 
     def treat_outliers(self, tx):
+        """
+        Outliers are replaced by the upper or lower arm of a boxplot.
+        Every value above the 75th quantile plus 1.5 times the interquartile range,
+        is replaced by the 75th quantile times plus 1.5 times the interquartile range.
+
+        Every value above the 25th quantile minus 1.5 times the interquartile range,
+        is replaced by the 25th quantile minus 1.5 times the interquartile range.
+
+        :param tx:  np.array with the features
+        :return tx:  np.array with the features without outliers
+        """
         iqr = self.q3 - self.q1
 
         outliers = np.where(tx > self.q3 + 1.5 * iqr)
@@ -61,7 +80,17 @@ class DataCleaning:
         return tx
 
     def treat_missing_data(self, tx):
-        # Fill na with maximum value
+        """
+        Separating by jets, there is only one column with missing values
+        that may be undefined if the topology of the event is too far from the
+        expected topology.
+        The missing values were replaced by the upper arm of the boxplot and an
+        extra column is created indicating where the values were imputated.
+
+        :param tx: np.array with the features
+        :return tx: np.array with the features without missing values
+        :return tX_imputed: np.array with where values were imputated
+        """
         iqr = self.q3 - self.q1
         inds = np.where(np.isnan(tx))
         tx[inds] = np.take(self.q3 + 1.5 * iqr, inds[1])
@@ -76,16 +105,26 @@ class DataCleaning:
         return tx, tX_imputed
 
     def standardize(self, tx):
+        """
+        standardization robust to outliers. The median is subtracted from each
+        feature and the values are divided by the interquartile range.
+
+        :param tx: np.array with the features
+        :return robust: np.array with the standardized features
+        """
         iqr = self.q3 - self.q1
-        return (tx - self.median) / iqr
+        robust = (tx - self.median) / iqr
+        return robust
 
     def fit_transform(self, tx):
         """
-        It computes the percentiles and the median for the given data sample.
-
-        :param tx: np.array, with the data
+        It computes the percentiles and the median for the data sample.
+        Fits the values with the trainig set and saves the values to be used
+        with the testing set
+        Transforms the training set.
+        :param tx: np.array with the features
+        :param tx: np.array with the features transformed
         """
-        # Robust standardization & outliers
         tx = self.remove_empty_features(tx)
         tx = self.remove_constant_features(tx)
         self.q1 = np.nanpercentile(tx, q=25, axis=0)
@@ -101,8 +140,10 @@ class DataCleaning:
 
     def transform(self, tx):
         """
-        :param tx: np.array, with the data
-        :return: np.array with the standardized data
+        Transforms the testing set the same way the training set was transformed
+        Transforms the training set.
+        :param tx: np.array with the features
+        :param tx: np.array with the features transformed
         """
         tx = self.remove_empty_features(tx)
         tx = self.remove_constant_features(tx)
@@ -114,6 +155,11 @@ class DataCleaning:
 
 
 class FeatureEngineering:
+    """
+    This class is responsible for engineering new features
+    The training set is meant to fit the global values (mean, std)
+    to be then used to transform the training and testing set.
+    """
     def __init__(self):
         self.top_features_list = None
         self.degree = None
@@ -122,6 +168,14 @@ class FeatureEngineering:
         self.std = None
 
     def create_poly_features(self, tX, degree):
+        """
+        Creates polynomial expansion
+
+        :param tX: np.array with the features
+        :param degree: int, maximum number of degree desired for the polynomial
+        expansion
+        :return tX_poly: np.array with the expanded features
+        """
         poly = np.ones((len(tX), 1))
         for deg in range(1, degree+1):
             poly = np.c_[poly, np.power(tX, deg)]
@@ -130,6 +184,13 @@ class FeatureEngineering:
         return tX_poly
 
     def create_interactions(self, tX, columns):
+        """
+        Creates variable interaction
+
+        :param tX: np.array with the features
+        :param columns: np.array of features to create the interactions
+        :return tX: np.array with the interactions
+        """
         for col1 in columns:
             for col2 in columns:
                 if col1 > col2:
@@ -138,19 +199,43 @@ class FeatureEngineering:
         return tX
 
     def select_top_vars(self, tX, y, n=5):
+        """
+        Selects the variables to create interactions with. The selected features
+        are the ones with the largest (in magnitude) coefficients
+
+        :param tX: np.array with the features
+        :param y: Lables corresponding to tX
+        :param n: Number of top features to be returned
+        :return top_features_list: np.array with top features
+        """
         initial_w =  np.zeros((tX.shape[1]))
         w, loss = reg_logistic_regression(y, tX, 1e-6, initial_w, 1000, 1e-6)
         top_features_list = np.argsort(-abs(w))[:int(n)]
         return top_features_list
 
-    def normalize(self, tX):
-        return (tX- self.mean)/(self.std)
+    def standardize(self, tX):
+        """
+        For optimization purposes, after the transformations, all the variables
+        are standardized using the mean.
+
+        :param tX: np.array with the features
+        :return tX: np.array with the standardized features
+        """
+        tX = (tX- self.mean)/(self.std)
+        return tX
 
     def fit_transform(self, tX, y, degree, num_top_vars):
         """
-        To be used with the training set
+        Fits the values with the trainig set and saves the values to be used
+        with the testing set
+        Transforms the training set by creating polynomial features and
+        interactions.
 
-        :param tx: np.array, with the data
+        :param tX: np.array with the features
+        :param y: np.array with the labels
+        :param degree: int, maximum degree for the polynomial expansion
+        :param num_top_vars: int, number of features to create interactions with
+        :param tX_normalized: np.array with the features transformed
         """
         self.degree = degree
         self.num_top_vars = num_top_vars
@@ -163,16 +248,18 @@ class FeatureEngineering:
         self.mean = np.mean(tX_interactions, axis = 0)
         self.std = np.std(tX_interactions, axis = 0)
 
-        tX_normalized =self.normalize(tX_interactions)
+        tX_normalized =self.standardize(tX_interactions)
         return tX_normalized
 
-    # To be used with the testing set
+
     def transform(self, tX):
         """
-        :param tx: np.array, with the data
-        :return: np.array with the new features
+        Transforms the testing set the same way the training set was transformed
+        Transforms the training set.
+        :param tx: np.array with the features
+        :param tx: np.array with the features transformed
         """
         tX_poly =  self.create_poly_features(tX, self.degree)
         tX_interactions = self.create_interactions(tX_poly, self.top_features_list)
-        tX_normalized =self.normalize(tX_interactions)
+        tX_normalized =self.standardize(tX_interactions)
         return tX_normalized
