@@ -5,20 +5,6 @@ from preprocessing import *
 from implementations import *
 from proj1_helpers import *
 
-def get_best_params(jet):
-    file_name ="./../results/gridsearch/results_{0}.csv".format(jet)
-    results= np.genfromtxt(file_name, delimiter=",")
-
-    top_row = np.argmax(results[:,6])
-    best_params = results[top_row]
-
-    degrees = int(best_params[0])
-    features =  int(best_params[1])
-    lambda_ =float(best_params[2])
-    gamma = float(best_params[3])
-    max_iter = int(best_params[4])
-    return degrees, features, lambda_, gamma, max_iter
-
 
 def best_model_predictions(data_obj, jet, degrees, features):
     """
@@ -49,10 +35,9 @@ def best_model_predictions(data_obj, jet, degrees, features):
     max_iter = 1000
 
     w, loss = reg_logistic_regression(y, tx, lambda_, initial_w, max_iter, gamma)
-    pred = predict_labels(w, tx_test, 1)
+    pred = predict_labels(w, tx_test, True)
 
     return ids_test, pred
-
 
 
 def main():
@@ -62,19 +47,18 @@ def main():
     # Load train and test datasets
     data_obj = DataLoader()
 
-    ids_test_sub_0, y_pred_0  = best_model_predictions(data_obj, 0, 6, 2)
-    ids_test_sub_1, y_pred_1  = best_model_predictions(data_obj, 1, 2, 5)
-    ids_test_sub_2, y_pred_2  = best_model_predictions(data_obj, 2, 6, 6)
-    ids_test_sub_3, y_pred_3  = best_model_predictions(data_obj, 3, 5, 4)
+    ids_test_sub_0, y_pred_0 = best_model_predictions(data_obj=data_obj, jet=0, degrees=6, features=2)
+    ids_test_sub_1, y_pred_1 = best_model_predictions(data_obj=data_obj, jet=1, degrees=6, features=5)
+    ids_test_sub_2, y_pred_2 = best_model_predictions(data_obj=data_obj, jet=2, degrees=6, features=6)
+    ids_test_sub_3, y_pred_3 = best_model_predictions(data_obj=data_obj, jet=3, degrees=6, features=4)
 
-    ids_all = np.concatenate((ids_test_sub_0,ids_test_sub_1,
-                            ids_test_sub_2,ids_test_sub_3), axis = 0)
-    preds_all = np.concatenate((y_pred_0,y_pred_1,y_pred_2,y_pred_3),axis = 0)
+    ids_all = np.concatenate((ids_test_sub_0, ids_test_sub_1, ids_test_sub_2, ids_test_sub_3), axis=0)
+    preds_all = np.concatenate((y_pred_0, y_pred_1, y_pred_2, y_pred_3), axis=0)
 
     preds_all = np.where(preds_all == 0, -1, preds_all)
     OUTPUT_PATH = './../results/predictions/best_model_predictions_all.csv'
 
-    create_csv_submission(ids_all, preds_all,OUTPUT_PATH)
+    create_csv_submission(ids_all, preds_all, OUTPUT_PATH)
     print("Predictions have been created.")
 
 

@@ -1,86 +1,92 @@
 import numpy as np
 
-def get_error_vector(y, tx, w):
+
+def calculate_error(y, tx, w):
     """
-    Computes the error vector
-    Args:
-        y: labels
-        tx: features
-        w: weights
-    Returns:
-        error_vector: the error vector defined as y - tx.dot(w)
+    Computes the error vector.
+
+    :param y: np.array with the labels
+    :param tx: np.array with the features
+    :param w: np.array with the weights
+    :returns:
+        error_vector: np.array of the error vector
     """
     return y - tx.dot(w)
 
-def get_mse(error_vector):
+
+def calculate_mse(e):
     """
     Computes the mse for a given error vector.
-    Args:
-        error_vector: error vector
-    Returns:
-        mse: mean squared error
-    """
-    return np.mean(error_vector ** 2) / 2.
 
-def get_gradient(tx, error_vector):
+    :param e: np.array of the error vector
+    :returns:
+        mse: float, mean squared error
+    """
+    return 1 / 2 * np.mean(e ** 2)
+
+
+def calculate_gradient(tx, err):
     """
     Computes the gradient for a given error vector.
-    Args:
-        y: labels
-        error_vector: error vector
+
+    :param tx: np.array with the features
+    :param err: np.array of the error vector
     Returns:
-        gradient: the gradient vector
+        gradient: np.array of the gradient vector
     """
-    return - tx.T.dot(error_vector) / float(error_vector.size)
+    return - tx.T.dot(err) / float(len(err))
+
 
 def sigmoid(t):
     """
-    Applies the sigmoid function to its input
-    Args:
-        t: the input
-    Returns:
-        sigmoid_t: sig(t)
-    """
-    return 1. / (1. + np.exp(-t))
+    Applies the sigmoid function to the input.
 
-def get_logistic_loss(y, tx, w):
+    :param t: np.array with the input
+    :returns:
+        sigmoid_t: np.array of sig(t)
     """
-    Computes the logistic loss
-    Args:
-        y: labels
-        tx: features
-        w: weights
-    Returns:
-        loss: logistic loss
+    return 1.0 / (1 + np.exp(-t))
+
+
+def calculate_logistic_loss(y, tx, w):
     """
-    inner = tx.dot(w)
-    pred = sigmoid(inner)
-    loss =  y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
+    Computes the logistic loss.
+
+    :param y: np.array with the labels
+    :param tx: np.array with the features
+    :param w: np.array with the weights
+    :returns:
+        loss: float, logistic loss
+    """
+    pred = sigmoid(tx.dot(w))
+    loss = y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
     return np.squeeze(- loss)
 
-def get_logistic_gradient(y, tx, w):
+
+def calculate_logistic_gradient(y, tx, w):
     """
     Computes the gradient of the logistic regression loss function.
-    Args:
-        y: labels
-        tx: features
-        w: weights
-    Returns:
-        logistic_gradient: the gradient
+
+    :param y: np.array with the labels
+    :param tx: np.array with the features
+    :param w: np.array with the weights
+    :returns:
+        logistic_gradient: np.array of the gradient vector
     """
     return tx.T.dot(sigmoid(tx.dot(w)) - y)
 
+
 def penalized_logistic_regression(y, tx, w, lambda_):
     """
-    Performs logistic regression with a penalization term
-    Args:
-        y: labels
-        tx: features
-        w: weights
-    Returns:
-        loss: the penalized regression loss
-        logistic_gradient: the penalized regression gradient
+    Performs logistic regression with a penalization term.
+
+    :param y: np.array with the labels
+    :param tx: np.array with the features
+    :param w: np.array with the weights
+    :returns:
+        loss: float, the penalized regression loss
+        logistic_gradient: np.array of the penalized regression gradient
     """
-    loss = get_logistic_loss(y, tx, w) + (lambda_ ) * np.squeeze(w.T.dot(w))
-    gradient = get_logistic_gradient(y, tx, w) + lambda_ * w
+    loss = calculate_logistic_loss(y, tx, w) + lambda_ * np.squeeze(w.T.dot(w))
+    gradient = calculate_logistic_gradient(y, tx, w) + lambda_ * w
     return loss, gradient

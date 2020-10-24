@@ -17,14 +17,16 @@ MODEL_DIR = os.path.join(ROOT_DIR, 'models')
 
 
 class DataLoader:
+    """
+    This class is responsible for the loading of the data and the splitting into train and validation.
+    """
 
     def __init__(self, sub_sample=0):
         self.tx = None
         self.y = None
-        self.tx_test_labeled = None
-        self.y_test_labeled = None
         self.test = None
         self.ids_test = None
+
         self._load_data(sub_sample)
 
     def _load_data(self, sub_sample=0):
@@ -55,12 +57,8 @@ class DataLoader:
             yb = yb[::50]
             tx = tx[::50]
 
-        # tx, tx_te, yb, yb_te = self.split_data(tx, yb, 0.9)
-
         self.tx = tx
         self.y = yb
-        # self.tx_test_labeled = tx_te
-        # self.y_test_labeled = yb_te
         self.test = test
         self.ids_test = ids_test
 
