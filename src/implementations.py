@@ -72,7 +72,7 @@ def least_squares_SGD(y, tx, initial_w, max_iters, gamma, verbose=False):
             loss = calculate_mse(err)
 
             # Compute the gradient for mse loss
-            gradient_vector = calculate_gradient(tx_batch, err, w)
+            gradient_vector = calculate_gradient(tx_batch, err)
 
             # Update weights
             w -= gamma * gradient_vector
@@ -197,7 +197,7 @@ def calculate_loss(y, tx, w):
     loss = y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
     return np.squeeze(- loss)
 
-def calculate_gradient(y, tx, w):
+def calculate_reg_logistic_gradient(y, tx, w):
     """compute the gradient of loss."""
     pred = sigmoid(tx.dot(w))
     grad = tx.T.dot(pred - y)
@@ -215,7 +215,7 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
         # get loss and update w.
 
         loss = calculate_loss(y, tx, w) + lambda_ * np.squeeze(w.T.dot(w))
-        gradient = calculate_gradient(y, tx, w) + 2 * lambda_ * w
+        gradient = calculate_reg_logistic_gradient(y, tx, w) + 2 * lambda_ * w
         w = w - gamma * gradient
         losses.append(loss)
         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
