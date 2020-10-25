@@ -10,16 +10,22 @@ def settings_combinations(search_space):
     settings = list(it.product(*(search_space[Name] for Name in all_names)))
     return settings
 
+def sigmoid(x):
+    """Apply sigmoid function on x"""
+    return 1.0 / (1 + np.exp(-x))
+
 
 def predict_labels(weights, data, logistic):
     """Generates class predictions given weights, and a test data matrix"""
+    y_pred = None
     if logistic:
         threshold = 0.5
+        y_pred = sigmoid(np.dot(data, weights))
     else:
         threshold = 0
+        y_pred = np.dot(data, weights)
 
-    y_pred = np.dot(data, weights)
-    y_pred[np.where(y_pred <= threshold)] = -1
+    y_pred[np.where(y_pred <= threshold)] = 0
     y_pred[np.where(y_pred > threshold)] = 1
 
     return y_pred

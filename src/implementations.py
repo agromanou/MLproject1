@@ -72,7 +72,7 @@ def least_squares_SGD(y, tx, initial_w, max_iters, gamma, verbose=False):
             loss = calculate_mse(err)
 
             # Compute the gradient for mse loss
-            gradient_vector = calculate_gradient(tx_batch, err)
+            gradient_vector = calculate_gradient(tx_batch, err, w)
 
             # Update weights
             w -= gamma * gradient_vector
@@ -184,46 +184,88 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma, batch_size=0, verbos
     return ws[-1], losses[-1]
 
 
-def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, batch_size=0, verbose=False):
-    """
-    Regularized logistic regression using gradient descent or SGD
 
-    :param y: np.array with the labels
-    :param tx: np.array with the features
-    :param lambda_: float, regularization hyper-parameter
-    :param initial_w: np.array with the initial weights
-    :param max_iters: int, maximum number of iterations
-    :param gamma: float, step size
-    :param batch_size: int, if 0 it runs GD
-    :param verbose: boolean, prints losses every 100 iterations
-    :returns:
-        w: np.array with the optimal weights
-        loss: float, optimal loss
-    """
-    ws = [initial_w]
-    losses = []
-    w = initial_w
+
+#######
+
+def sigmoid(t):
+    return 1/(1+np.exp(-t))
+
+def calculate_loss(y, tx, w):
+    """compute the cost by negative log likelihood."""
+    pred = sigmoid(tx.dot(w))
+    loss = y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
+    return np.squeeze(- loss)
+
+def calculate_gradient(y, tx, w):
+    """compute the gradient of loss."""
+    pred = sigmoid(tx.dot(w))
+    grad = tx.T.dot(pred - y)
+    return grad
+
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
+    #init parameters
     threshold = 1e-8
+    losses = []
 
-    # if no batch size is given it runs GD
-    if not batch_size:
-        batch_size = len(tx)
+    w = initial_w
 
-    for i in range(max_iters):
-        for y_batch, tx_batch in batch_iter(y, tx, batch_size=batch_size, num_batches=1):
-            # Compute the loss and the gradient for mse loss
-            loss, gradient_vector = penalized_logistic_regression(y_batch, tx_batch, w, lambda_)
+    # start the logistic regression
+    for iter in range(max_iters):
+        # get loss and update w.
 
-            # Update weights
-            w -= gamma * gradient_vector
+        loss = calculate_loss(y, tx, w) + lambda_ * np.squeeze(w.T.dot(w))
+        gradient = calculate_gradient(y, tx, w) + 2 * lambda_ * w
+        w = w - gamma * gradient
+        losses.append(loss)
+        if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+            break
 
-            ws.append(w)
-            losses.append(loss)
+    return w.squeeze(), loss
 
-            if i % 100 == 0:
-                print("Current iteration={i}, loss={loss:.4f}" .format(i=i, loss=loss)) if verbose else None
 
-            if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
-                break
+####
 
-    return ws[-1], losses[-1]
+# def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, batch_size=0, verbose=False):
+#     """
+#     Regularized logistic regression using gradient descent or SGD
+#
+#     :param y: np.array with the labels
+#     :param tx: np.array with the features
+#     :param lambda_: float, regularization hyper-parameter
+#     :param initial_w: np.array with the initial weights
+#     :param max_iters: int, maximum number of iterations
+#     :param gamma: float, step size
+#     :param batch_size: int, if 0 it runs GD
+#     :param verbose: boolean, prints losses every 100 iterations
+#     :returns:
+#         w: np.array with the optimal weights
+#         loss: float, optimal loss
+#     """
+#     ws = [initial_w]
+#     losses = []
+#     w = initial_w
+#     threshold = 1e-8
+#
+#     # if no batch size is given it runs GD
+#     if not batch_size:
+#         batch_size = len(tx)
+#
+#     for i in range(max_iters):
+#         for y_batch, tx_batch in batch_iter(y, tx, batch_size=batch_size, num_batches=1):
+#             # Compute the loss and the gradient for mse loss
+#             loss, gradient_vector = penalized_logistic_regression(y_batch, tx_batch, w, lambda_)
+#
+#             # Update weights
+#             w -= gamma * gradient_vector
+#
+#             ws.append(w)
+#             losses.append(loss)
+#
+#             if i % 100 == 0:
+#                 print("Current iteration={i}, loss={loss:.4f}" .format(i=i, loss=loss)) if verbose else None
+#
+#             if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
+#                 break
+#
+#     return ws[-1], losses[-1]

@@ -88,5 +88,5 @@ def penalized_logistic_regression(y, tx, w, lambda_):
         logistic_gradient: np.array of the penalized regression gradient
     """
     loss = calculate_logistic_loss(y, tx, w) + lambda_ * np.squeeze(w.T.dot(w))
-    gradient = calculate_logistic_gradient(y, tx, w) + lambda_ * w
+    gradient = calculate_logistic_gradient(y, tx, w) + 2 * lambda_ * w
     return loss, gradient

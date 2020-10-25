@@ -47,10 +47,10 @@ def main():
     # Load train and test datasets
     data_obj = DataLoader()
 
-    ids_test_sub_0, y_pred_0 = best_model_predictions(data_obj=data_obj, jet=0, degrees=6, features=2)
-    ids_test_sub_1, y_pred_1 = best_model_predictions(data_obj=data_obj, jet=1, degrees=6, features=5)
-    ids_test_sub_2, y_pred_2 = best_model_predictions(data_obj=data_obj, jet=2, degrees=6, features=6)
-    ids_test_sub_3, y_pred_3 = best_model_predictions(data_obj=data_obj, jet=3, degrees=6, features=4)
+    ids_test_sub_0, y_pred_0 = best_model_predictions(data_obj=data_obj, jet=0, degrees=7, features=2)
+    ids_test_sub_1, y_pred_1 = best_model_predictions(data_obj=data_obj, jet=1, degrees=9, features=5)
+    ids_test_sub_2, y_pred_2 = best_model_predictions(data_obj=data_obj, jet=2, degrees=8, features=6)
+    ids_test_sub_3, y_pred_3 = best_model_predictions(data_obj=data_obj, jet=3, degrees=9, features=4)
 
     ids_all = np.concatenate((ids_test_sub_0, ids_test_sub_1, ids_test_sub_2, ids_test_sub_3), axis=0)
     preds_all = np.concatenate((y_pred_0, y_pred_1, y_pred_2, y_pred_3), axis=0)

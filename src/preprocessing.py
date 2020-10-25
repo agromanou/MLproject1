@@ -135,7 +135,7 @@ class DataCleaning:
         tx, tx_imputed = self.treat_missing_data(tx)
         tx = self.standardize(tx)
 
-        #tx = np.c_[tx, tx_imputed]
+        tx = np.c_[tx, tx_imputed]
         return tx
 
     def transform(self, tx):
@@ -150,7 +150,7 @@ class DataCleaning:
         tx = self.treat_outliers(tx)
         tx, tx_imputed = self.treat_missing_data(tx)
         tx = self.standardize(tx)
-        #tx = np.c_[tx, tx_imputed]
+        tx = np.c_[tx, tx_imputed]
         return tx
 
 
@@ -167,49 +167,44 @@ class FeatureEngineering:
         self.mean = None
         self.std = None
 
-    def create_poly_features(self, tX, degree):
-        """
-        Creates polynomial expansion
+    # def create_poly_features(self, tX, degree):
+    #     """
+    #     Creates polynomial expansion
+    #
+    #     :param tX: np.array with the features
+    #     :param degree: int, maximum number of degree desired for the polynomial
+    #     expansion
+    #     :return tX_poly: np.array with the expanded features
+    #     """
+    #     poly = np.ones((len(tX), 1))
+    #     for deg in range(1, degree+1):
+    #         poly = np.c_[poly, np.power(tX, deg)]
+    #
+    #     tX_poly = np.delete(poly, 0, 1)
+    #     return tX_poly
 
-        :param tX: np.array with the features
-        :param degree: int, maximum number of degree desired for the polynomial
-        expansion
-        :return tX_poly: np.array with the expanded features
+    def create_poly_features(self, x, degree):
         """
-        poly = np.ones((len(tX), 1))
-        for deg in range(1, degree+1):
-            poly = np.c_[poly, np.power(tX, deg)]
+        Build a polynomial of a certain degree with crossed terms (applying sum, product and square of product)
+        :param x: Features
+        :param degree: Degree of the polynomial (for each individual feature)
+        :return: poly: Expanded features
+        """
+        features = x.shape[1]
+        # Create powers for each of the features
+        poly = np.ones((len(x), 1))
+        for feat in range(features):
+            for deg in range(1, degree + 1):
+                poly = np.c_[poly, np.power(x[:, feat], deg)]
 
-        tX_poly = np.delete(poly, 0, 1)
-        return tX_poly
-
-    def create_interactions(self, tX, columns):
-        """
-        Creates variable interaction
-
-        :param tX: np.array with the features
-        :param columns: np.array of features to create the interactions
-        :return tX: np.array with the interactions
-        """
-        for col1 in columns:
-            for col2 in columns:
-                if col1 > col2:
-                    col3 = np.multiply(tX[:, col1], tX[:, col2])
-                    tX = np.c_[tX, col3]
-        return tX
-
-    def get_sin_cos(self, tX):
-        """
-        Adds the sin and cos of features as new features.
-        Args:
-            tX: the given feature matrix
-        Returns:
-            tX: feature matrix with sine values
-        """
-        for col in range(tX.shape[1]):
-            tX = np.c_[tX, np.sin(tX[:, col])]
-            tX = np.c_[tX, np.cos(tX[:, col])]
-        return tX
+        poly = np.delete(poly, 0, 1)
+        # Sum, multiply and features between them
+        for this_feat in range(features):
+            for that_feat in range(this_feat + 1, features):
+                poly = np.c_[poly, x[:, this_feat] + x[:, that_feat],
+                             x[:, this_feat] * x[:, that_feat],
+                             np.power(x[:, this_feat] * x[:, that_feat], 2)]
+        return poly
 
     def select_top_vars(self, tX, y, n=5):
         """
@@ -254,15 +249,11 @@ class FeatureEngineering:
         self.num_top_vars = num_top_vars
 
         tX_poly =  self.create_poly_features(tX, degree)
-        tX_sin_cos = self.get_sin_cos(tX_poly)
-        # top_features_list = self.select_top_vars(tX_poly, y, num_top_vars)
-        # self.top_features_list = top_features_list
-        # tX_interactions = self.create_interactions(tX_poly, top_features_list)
 
-        self.mean = np.mean(tX_sin_cos, axis = 0)
-        self.std = np.std(tX_sin_cos, axis = 0)
+        self.mean = np.mean(tX_poly, axis = 0)
+        self.std = np.std(tX_poly, axis = 0)
 
-        tX_normalized =self.standardize(tX_sin_cos)
+        tX_normalized =self.standardize(tX_poly)
         return tX_normalized
 
 
@@ -274,7 +265,5 @@ class FeatureEngineering:
         :param tx: np.array with the features transformed
         """
         tX_poly =  self.create_poly_features(tX, self.degree)
-        #tX_interactions = self.create_interactions(tX_poly, self.top_features_list)
-        tX_sin_cos = self.get_sin_cos(tX_poly)
-        tX_normalized =self.standardize(tX_sin_cos)
+        tX_normalized =self.standardize(tX_poly)
         return tX_normalized
