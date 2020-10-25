@@ -193,17 +193,14 @@ def cross_validation(tx, y, folds=5):
         rlr_gd_acc.append(acc)
         rlr_gd_f1.append(f1)
 
-    #
-    res['least_squares_gd'] = {'Acc': sum(gd_acc)/len(gd_acc), 'F1': sum(gd_f1)/len(gd_f1)}
-    res['least_squares_sgd'] = {'Acc': sum(sgd_acc)/len(sgd_acc), 'F1': sum(sgd_f1)/len(sgd_f1)}
-    res['least_squares'] = {'Acc': sum(ls_acc)/len(ls_acc), 'F1': sum(ls_f1)/len(ls_f1)}
-    res['ridge_regression'] = {'Acc': sum(rr_acc)/len(rr_acc), 'F1': sum(rr_f1)/len(rr_f1)}
-    res['logistic_regression_gd'] = {'Acc': sum(lr_gd_acc)/len(lr_gd_acc), 'F1': sum(lr_gd_f1)/len(lr_gd_f1)}
-    # res['logistic_regression_sgd'] = {'Acc': sum(lr_sgd_acc)/len(lr_sgd_acc), 'F1': sum(lr_sgd_f1)/len(lr_sgd_f1)}
+    res['least_squares_gd'] = {'Acc': sum(gd_acc)/len(gd_acc), 'F1': sum(gd_f1)/len(gd_f1),'std': np.std(gd_f1)}
+    res['least_squares_sgd'] = {'Acc': sum(sgd_acc)/len(sgd_acc), 'F1': sum(sgd_f1)/len(sgd_f1),'std': np.std(sgd_f1)}
+    res['least_squares'] = {'Acc': sum(ls_acc)/len(ls_acc), 'F1': sum(ls_f1)/len(ls_f1),'std': np.std(ls_f1)}
+    res['ridge_regression'] = {'Acc': sum(rr_acc)/len(rr_acc), 'F1': sum(rr_f1)/len(rr_f1),'std': np.std(rr_f1)}
+    res['logistic_regression_gd'] = {'Acc': sum(lr_gd_acc)/len(lr_gd_acc), 'F1': sum(lr_gd_f1)/len(lr_gd_f1),'std': np.std(lr_gd_f1)}
     res['reg_logistic_regression_gd'] = {'Acc': sum(rlr_gd_acc)/len(rlr_gd_acc), 'F1': sum(rlr_gd_f1)/len(rlr_gd_f1), 'std': np.std(rlr_gd_acc)}
 
     # res['reg_logistic_regression_sgd'] = {'Acc': sum(rlr_sgd_acc)/len(rlr_sgd_acc), 'F1': sum(rlr_sgd_f1)/len(rlr_sgd_f1)}
-
     return res
 
 
