@@ -167,22 +167,6 @@ class FeatureEngineering:
         self.mean = None
         self.std = None
 
-    # def create_poly_features(self, tX, degree):
-    #     """
-    #     Creates polynomial expansion
-    #
-    #     :param tX: np.array with the features
-    #     :param degree: int, maximum number of degree desired for the polynomial
-    #     expansion
-    #     :return tX_poly: np.array with the expanded features
-    #     """
-    #     poly = np.ones((len(tX), 1))
-    #     for deg in range(1, degree+1):
-    #         poly = np.c_[poly, np.power(tX, deg)]
-    #
-    #     tX_poly = np.delete(poly, 0, 1)
-    #     return tX_poly
-
     def create_poly_features(self, tX, degree):
         """
         Build a polynomial of a certain degree with crossed terms (applying sum, product and square of product)
@@ -217,21 +201,6 @@ class FeatureEngineering:
                              tX[:, feat1] * tX[:, feat2],
                              np.power(tX[:, feat1] * tX[:, feat2], 2)]
         return poly
-
-    def select_top_vars(self, tX, y, n=5):
-        """
-        Selects the variables to create interactions with. The selected features
-        are the ones with the largest (in magnitude) coefficients
-
-        :param tX: np.array with the features
-        :param y: Lables corresponding to tX
-        :param n: Number of top features to be returned
-        :return top_features_list: np.array with top features
-        """
-        initial_w =  np.zeros((tX.shape[1]))
-        w, loss = reg_logistic_regression(y, tX, 1e-6, initial_w, 1000, 1e-6)
-        top_features_list = np.argsort(-abs(w))[:int(n)]
-        return top_features_list
 
     def standardize(self, tX):
         """

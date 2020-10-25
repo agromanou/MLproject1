@@ -19,14 +19,12 @@ def predict_labels(weights, data, logistic):
     """Generates class predictions given weights, and a test data matrix"""
     y_pred = None
     if logistic:
-        threshold = 0.5
         y_pred = sigmoid(np.dot(data, weights))
     else:
-        threshold = 0
         y_pred = np.dot(data, weights)
 
-    y_pred[np.where(y_pred <= threshold)] = 0
-    y_pred[np.where(y_pred > threshold)] = 1
+    y_pred[np.where(y_pred <= 0.5)] = 0
+    y_pred[np.where(y_pred > 0.5)] = 1
 
     return y_pred
 

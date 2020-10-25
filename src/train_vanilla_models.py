@@ -165,9 +165,9 @@ def cross_validation(tx, y, folds=5):
         tx_train = data_cleaner.fit_transform(tx_train)
         print(tx_train.shape)
         tx_val = data_cleaner.transform(tx_val)
-        transformer = FeatureEngineering()
-        tx_train = transformer.fit_transform(tx_train, y, 3, 0)
-        tx_val = transformer.transform(tx_val)
+        # transformer = FeatureEngineering()
+        # tx_train = transformer.fit_transform(tx_train, y, 15, 0)
+        # tx_val = transformer.transform(tx_val)
 
         acc, f1 = run_gradient_descent(tx_train, y_train, tx_val, y_val)
         gd_acc.append(acc)
@@ -204,7 +204,7 @@ def cross_validation(tx, y, folds=5):
     return res
 
 
-def main_jets():
+def main():
     # Load data
     data_obj = DataLoader()
     results = dict()
@@ -223,16 +223,5 @@ def main_jets():
     pprint(results)
 
 
-def main():
-    # Load data
-    data_obj = DataLoader()
-
-    print('\n\nTraining models')
-    res = cross_validation(tx=data_obj.tx, y=data_obj.y)
-
-    print('RESULTS:')
-    pprint(res)
-
-
 if __name__ == '__main__':
-    main_jets()
+    main()
