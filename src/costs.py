@@ -45,7 +45,7 @@ def sigmoid(t):
     :returns:
         sigmoid_t: np.array of sig(t)
     """
-    return 1.0 / (1 + np.exp(-t))
+    return 1 / (1 + np.exp(-t))
 
 
 def calculate_logistic_loss(y, tx, w):
@@ -60,7 +60,7 @@ def calculate_logistic_loss(y, tx, w):
     """
     pred = sigmoid(tx.dot(w))
     loss = y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
-    return np.squeeze(- loss)
+    return np.squeeze(-loss)
 
 
 def calculate_logistic_gradient(y, tx, w):
