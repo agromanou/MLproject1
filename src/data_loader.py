@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-Module description
-"""
 import numpy as np
 import os
 

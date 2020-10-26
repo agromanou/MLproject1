@@ -6,9 +6,26 @@ import itertools as it
 
 
 def settings_combinations(search_space):
-    all_names = sorted(search_space)
-    settings = list(it.product(*(search_space[Name] for Name in all_names)))
+    """
+    It creates all the combinations of values between the elements of input lists.
+    e.g.
+        Input:
+            {'paramA': ['value1', 'value2'],
+             'paramB': ['value3', 'value4']}
+        Output:
+            [['value1', 'value3'],
+            ['value1', 'value4'],
+            ['value2', 'value3'],
+            ['value2', 'value4']]
+
+    :param search_space: dict of lists, with the possible values for each hyper-parameter.
+    :return:
+        settings: list of lists with the different combinations of settings.
+    """
+    params = sorted(search_space)
+    settings = list(it.product(*(search_space[param] for param in params)))
     return settings
+
 
 def sigmoid(x):
     """Apply sigmoid function on x"""
@@ -17,11 +34,7 @@ def sigmoid(x):
 
 def predict_labels(weights, data, logistic):
     """Generates class predictions given weights, and a test data matrix"""
-    y_pred = None
-    if logistic:
-        y_pred = sigmoid(np.dot(data, weights))
-    else:
-        y_pred = np.dot(data, weights)
+    y_pred = sigmoid(np.dot(data, weights)) if logistic else np.dot(data, weights)
 
     y_pred[np.where(y_pred <= 0.5)] = 0
     y_pred[np.where(y_pred > 0.5)] = 1

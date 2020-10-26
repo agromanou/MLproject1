@@ -4,7 +4,7 @@
 Module description
 """
 import numpy as np
-from implementations import reg_logistic_regression
+
 
 def get_jet_data_split(y, tx, group):
     """
@@ -39,7 +39,8 @@ class DataCleaning:
         Finds the empty features presented in the dataset and removes them.
 
         :param tx: np.array with the features
-        :return tx: np.array with the cleaned features
+        :return:
+            tx: np.array with the cleaned features
         """
         tx = np.where(tx == -999, np.NaN, tx)
         tx = tx[:, ~np.all(np.isnan(tx), axis=0)]
@@ -50,7 +51,8 @@ class DataCleaning:
         Removes columns that have zero variance
 
         :param tx: np.array with the features
-        :return tx: np.array with the cleaned features
+        :returns:
+            tx: np.array with the cleaned features
         """
         if self.constant_columns is None:
             col_std = np.nanstd(tx, axis=0)
@@ -69,7 +71,8 @@ class DataCleaning:
         is replaced by the 25th quantile minus 1.5 times the interquartile range.
 
         :param tx:  np.array with the features
-        :return tx:  np.array with the features without outliers
+        :return:
+            tx:  np.array with the features without outliers
         """
         iqr = self.q3 - self.q1
 
@@ -85,11 +88,11 @@ class DataCleaning:
         that may be undefined if the topology of the event is too far from the
         expected topology.
         The missing values were replaced by the upper arm of the boxplot and an
-        extra column is created indicating where the values were imputated.
+        extra column is created indicating where the values were imputed.
 
         :param tx: np.array with the features
         :return tx: np.array with the features without missing values
-        :return tX_imputed: np.array with where values were imputated
+        :return tX_imputed: np.array with where values were imputed
         """
         iqr = self.q3 - self.q1
         inds = np.where(np.isnan(tx))
@@ -119,11 +122,12 @@ class DataCleaning:
     def fit_transform(self, tx):
         """
         It computes the percentiles and the median for the data sample.
-        Fits the values with the trainig set and saves the values to be used
-        with the testing set
-        Transforms the training set.
+        Fits the values with the training set and saves the values to be used
+        with the testing set.
+
         :param tx: np.array with the features
-        :param tx: np.array with the features transformed
+        :return:
+            tx: np.array with the features transformed
         """
         tx = self.remove_empty_features(tx)
         tx = self.remove_constant_features(tx)
@@ -142,8 +146,10 @@ class DataCleaning:
         """
         Transforms the testing set the same way the training set was transformed
         Transforms the training set.
+
         :param tx: np.array with the features
-        :param tx: np.array with the features transformed
+        :return:
+            tx: np.array with the features transformed
         """
         tx = self.remove_empty_features(tx)
         tx = self.remove_constant_features(tx)
@@ -167,84 +173,84 @@ class FeatureEngineering:
         self.mean = None
         self.std = None
 
-    def create_poly_features(self, tX, degree):
+    def create_poly_features(self, tx, degree):
         """
         Build a polynomial of a certain degree with crossed terms (applying sum, product and square of product)
 
-        :param tX: Features
+        :param tx: Features
         :param degree: Degree of the polynomial (for each individual feature)
-        :return: poly: Expanded features
+        :return:
+            poly: Expanded features
         """
-        features = tX.shape[1]
+        features = tx.shape[1]
         # Create powers for each of the features
-        poly = np.ones((len(tX), 1))
+        poly = np.ones((len(tx), 1))
         for feat in range(features):
             for deg in range(1, degree + 1):
-                poly = np.c_[poly, np.power(tX[:, feat], deg)]
+                poly = np.c_[poly, np.power(tx[:, feat], deg)]
 
         poly = np.delete(poly, 0, 1)
 
-        poly = self.build_interractions(tX, poly)
+        poly = self.build_interractions(tx, poly)
         return poly
 
-    def build_interractions(self, tX, poly):
+    def build_interractions(self, tx, poly):
         """
-        Build interractions between features sum, product and square of product
+        Build interactions between features sum, product and square of product
 
-        :param tX: Features
-        :return: poly: Expanded features
+        :param tx: Features
+        :param poly:
+        :return:
+            poly: Expanded features
         """
-        features = tX.shape[1]
+        features = tx.shape[1]
         for feat1 in range(features):
             for feat2 in range(feat1 + 1, features):
-                poly = np.c_[poly, tX[:, feat1] + tX[:, feat2],
-                             tX[:, feat1] * tX[:, feat2],
-                             np.power(tX[:, feat1] * tX[:, feat2], 2)]
+                poly = np.c_[poly, tx[:, feat1] + tx[:, feat2],
+                             tx[:, feat1] * tx[:, feat2],
+                             np.power(tx[:, feat1] * tx[:, feat2], 2)]
         return poly
 
-    def standardize(self, tX):
+    def standardize(self, tx):
         """
         For optimization purposes, after the transformations, all the variables
         are standardized using the mean.
 
-        :param tX: np.array with the features
-        :return tX: np.array with the standardized features
+        :param tx: np.array with the features
+        :return
+            tx: np.array with the standardized features
         """
-        tX = (tX- self.mean)/(self.std)
-        return tX
+        tx = (tx - self.mean) / self.std
+        return tx
 
-    def fit_transform(self, tX, y, degree, num_top_vars):
+    def fit_transform(self, tx, degree):
         """
-        Fits the values with the trainig set and saves the values to be used
+        Fits the values with the training set and saves the values to be used
         with the testing set
         Transforms the training set by creating polynomial features and
         interactions.
 
-        :param tX: np.array with the features
-        :param y: np.array with the labels
+        :param tx: np.array with the features
         :param degree: int, maximum degree for the polynomial expansion
-        :param num_top_vars: int, number of features to create interactions with
-        :param tX_normalized: np.array with the features transformed
         """
         self.degree = degree
-        self.num_top_vars = num_top_vars
 
-        tX_poly =  self.create_poly_features(tX, degree)
+        tx_poly = self.create_poly_features(tx, self.degree)
 
-        self.mean = np.mean(tX_poly, axis = 0)
-        self.std = np.std(tX_poly, axis = 0)
+        self.mean = np.mean(tx_poly, axis=0)
+        self.std = np.std(tx_poly, axis=0)
 
-        tX_normalized =self.standardize(tX_poly)
-        return tX_normalized
+        tx_normalized = self.standardize(tx_poly)
+        return tx_normalized
 
-
-    def transform(self, tX):
+    def transform(self, tx):
         """
         Transforms the testing set the same way the training set was transformed
         Transforms the training set.
         :param tx: np.array with the features
-        :param tx: np.array with the features transformed
+        :returns
+            tx: np.array with the features transformed
         """
-        tX_poly =  self.create_poly_features(tX, self.degree)
-        tX_normalized =self.standardize(tX_poly)
-        return tX_normalized
+        tx_poly = self.create_poly_features(tx, self.degree)
+        tx_normalized = self.standardize(tx_poly)
+        return tx_normalized

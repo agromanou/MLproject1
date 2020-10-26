@@ -145,7 +145,6 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma, verbose=False):
     :param initial_w: np.array with the initial weights
     :param max_iters: int, maximum number of iterations
     :param gamma: float, step size
-    :param batch_size: int, if 0 it runs GD
     :param verbose: boolean, prints losses every 100 iterations
     :returns:
         w: np.array with the optimal weights
@@ -179,7 +178,7 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma, verbose=False):
     return ws[-1], losses[-1]
 
 
-def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, verbose = False):
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, verbose=False):
     """
     Regularized logistic regression using gradient descent or SGD
 
@@ -189,7 +188,6 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, verbose
     :param initial_w: np.array with the initial weights
     :param max_iters: int, maximum number of iterations
     :param gamma: float, step size
-    :param batch_size: int, if 0 it runs GD
     :param verbose: boolean, prints losses every 100 iterations
     :returns:
         w: np.array with the optimal weights
