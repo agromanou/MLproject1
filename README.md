@@ -72,21 +72,6 @@ project
 
 ```
 
-* **data_loader.py**: Class `DataLoader` responsible for data loading and splitting. 
-* **preprocessing.py**:  Classes `DataCleaning` and `FeatureEngineering` responsible for missing values imputation, 
-treatment of outliers, standardization, normalization and polynomial expansion.
-* **implementations.py**: Functions responsible for model training and testing. 
-* **costs.py**: Functions responsible for loss functions and gradient computations.
-* **evaluation.py**: Class `Evaluation` responsible for the computation of classification evaluation metrics. 
-* **visualization.py**: Functions responsible for data visualization.
-* **run_vanilla_models.py**: `main()` function that tests the performance of vanilla models with cross-validation 
-without any feature engineering.
-* **run_model_selection.py**: `main()` function that runs hyper-parameter tuning and cross-validation, 
-storing the performance of each tested model. 
-* **run.py**: `main()` function that selects the hyper-parameters of the model with the best performance, 
-trains the model on all training data and produces predictions on the test dataset.
-
-
 ## Running vanilla models
 To run and assess the vanilla models, please run the following command:
 ```bash
