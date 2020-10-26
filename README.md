@@ -39,17 +39,18 @@ pip install -r requirements.txt
 ## Project Architecture
 The source code of this project is located under the `src/` directory. 
 
-* **data_loader.py**: Class `DataLoader()` responsible for data loading and splitting. 
-* **preprocessing.py**:  Classes `DataCleaning()` and `FeatureEngineering` responsible for missing values imputation, 
-treatment of outliers, standardization, normalization, polynomial expansion and feature interaction.
+* **data_loader.py**: Class `DataLoader` responsible for data loading and splitting. 
+* **preprocessing.py**:  Classes `DataCleaning` and `FeatureEngineering` responsible for missing values imputation, 
+treatment of outliers, standardization, normalization and polynomial expansion.
 * **implementations.py**: Functions responsible for model training and testing. 
+* **costs.py**: Functions responsible for loss functions and gradient computations.
 * **evaluation.py**: Class `Evaluation()` responsible for the computation of classification evaluation metrics. 
 * **visualization.py**: Functions responsible for data visualization.
+
 * **run_model_selection.py**: `main()` function that runs hyper-parameter tuning and cross-validation, 
 storing the performance of each tested model. 
-* **run.py**: `main()` function that read the output of `run_model_selection.py`, selects the hyper-parameters
-of the model with the best performance, trains the model on all training data and produces predictions on the test dataset.
-
+* **run_vanilla_models.py**: `main()` function that tests the performance of vanilla models with cross-validation without any feature engineering.
+* **run.py**: `main()` function that selects the hyper-parameters of the model with the best performance, trains the model on all training data and produces predictions on the test dataset.
 
 
 ## Running model selection
