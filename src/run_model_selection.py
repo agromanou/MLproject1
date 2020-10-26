@@ -43,6 +43,7 @@ def cross_validation(tx, y, folds, degrees, gamma, lambda_, epochs, verbose):
 
     num_rows = len(y)
     interval = int(num_rows / folds)
+    np.random.seed(1)
     indices = np.random.permutation(num_rows)
 
     for fold in range(int(folds)):

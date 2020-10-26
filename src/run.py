@@ -54,10 +54,14 @@ def main():
     data_obj = DataLoader()
 
     # Train model for each jet and get predictions
-    ids_test_sub_0, y_pred_0 = best_model_predictions(data_obj=data_obj, jet=0, degrees=7)
-    ids_test_sub_1, y_pred_1 = best_model_predictions(data_obj=data_obj, jet=1, degrees=9)
-    ids_test_sub_2, y_pred_2 = best_model_predictions(data_obj=data_obj, jet=2, degrees=8)
-    ids_test_sub_3, y_pred_3 = best_model_predictions(data_obj=data_obj, jet=3, degrees=9)
+    print("Jet 0")
+    ids_test_sub_0, y_pred_0 = best_model_predictions(data_obj=data_obj, jet=0, degrees=6)
+    print("Jet 1")
+    ids_test_sub_1, y_pred_1 = best_model_predictions(data_obj=data_obj, jet=1, degrees=10)
+    print("Jet 2")
+    ids_test_sub_2, y_pred_2 = best_model_predictions(data_obj=data_obj, jet=2, degrees=4)
+    print("Jet 3")
+    ids_test_sub_3, y_pred_3 = best_model_predictions(data_obj=data_obj, jet=3, degrees=6)
 
     # Concatenate all the predictions with their label
     ids_all = np.concatenate((ids_test_sub_0, ids_test_sub_1, ids_test_sub_2, ids_test_sub_3), axis=0)

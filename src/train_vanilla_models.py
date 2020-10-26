@@ -140,6 +140,7 @@ def cross_validation(tx, y, folds=10):
 
     num_rows = len(y)
     interval = int(num_rows / folds)
+    np.random.seed(1)
     indices = np.random.permutation(num_rows)
 
     # Initialize score lists that will store the performances of all the models for each fold
