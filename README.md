@@ -53,7 +53,7 @@ project
 ├─notebooks/                   # experimentation and exploration notebooks
 │ 
 ├─results/
-     predictions/              # directory to store predictions
+│    predictions/              # directory to store predictions
 │ 
 └─src/
      data_loader.py            # Class `DataLoader` responsible for data loading and splitting. 
