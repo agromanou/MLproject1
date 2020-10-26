@@ -4,7 +4,7 @@ from proj1_helpers import batch_iter
 
 # The six compulsory learning methods
 
-def least_squares_GD(y, tx, initial_w, max_iters, gamma, verbose=False):
+def least_squares_GD(y, tx, initial_w, max_iters, gamma, verbose=True):
     """
     Linear regression using gradient descent.
 
@@ -46,7 +46,7 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma, verbose=False):
     return ws[-1], losses[-1]
 
 
-def least_squares_SGD(y, tx, initial_w, max_iters, gamma, verbose=False):
+def least_squares_SGD(y, tx, initial_w, max_iters, gamma, verbose=True):
     """
     Linear regression using stochastic gradient descent.
 
@@ -136,7 +136,7 @@ def ridge_regression(y, tx, lambda_):
     return w, loss
 
 
-def logistic_regression(y, tx, initial_w, max_iters, gamma, verbose=False):
+def logistic_regression(y, tx, initial_w, max_iters, gamma, verbose=True):
     """
     Logistic regression using stochastic gradient descent or gradient descent.
 
@@ -159,7 +159,7 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma, verbose=False):
         # Compute loss
         loss = calculate_logistic_loss(y, tx, w)
 
-        # Compute the gradient for mse loss
+        # Compute the gradient
         gradient_vector = calculate_logistic_gradient(y, tx, w)
 
         # Update weights
@@ -178,7 +178,7 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma, verbose=False):
     return ws[-1], losses[-1]
 
 
-def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, verbose=False):
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, verbose=True):
     """
     Regularized logistic regression using gradient descent or SGD
 
@@ -199,9 +199,15 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, verbose
     w = initial_w
 
     for i in range(max_iters):
+        # Compute loss
         loss = calculate_logistic_loss(y, tx, w) + lambda_ * np.squeeze(w.T.dot(w))
+
+        # Compute the gradient
         gradient = calculate_logistic_gradient(y, tx, w) + 2 * lambda_ * w
-        w = w - gamma * gradient
+
+        # Update weights
+        w -= gamma * gradient
+
         losses.append(loss)
 
         if i % 100 == 0 and verbose:
@@ -210,4 +216,4 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma, verbose
         if len(losses) > 1 and np.abs(losses[-1] - losses[-2]) < threshold:
             break
 
-    return w.squeeze(), loss
+    return w.squeeze(), losses[-1]

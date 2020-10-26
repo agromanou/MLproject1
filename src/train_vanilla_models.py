@@ -1,27 +1,30 @@
 from data_loader import DataLoader
-from preprocessing import *
+from preprocessing import DataCleaning
 from implementations import *
-from evaluation import *
+from evaluation import Evaluation
 from proj1_helpers import predict_labels
-from pprint import pprint
 
 import sys
 sys.path.append('./../src/')
 
 
 def run_gradient_descent(tx_train, y_train, tx_val, y_val):
+    """It performs training and evaluation of least squares with gradient descent."""
+
     print('\nTraining with Gradient Descent')
     # Train on all the training dataset and evaluate on validation set
     initial_w = np.zeros((tx_train.shape[1]))
     gamma = 0.05
     max_iter = 1000
-    # training
+
+    # Train the model
     w, _ = least_squares_GD(y=y_train, tx=tx_train, initial_w=initial_w, max_iters=max_iter,
                             gamma=gamma, verbose=False)
 
-    # predictions
+    # Perform predictions
     y_pred = predict_labels(weights=w, data=tx_val, logistic=False)
 
+    # Evaluate
     evaluation = Evaluation(y_actual=y_val, y_pred=y_pred)
     acc = evaluation.get_accuracy()
     f1 = evaluation.get_f1()
@@ -31,18 +34,21 @@ def run_gradient_descent(tx_train, y_train, tx_val, y_val):
 
 
 def run_stochastic_gradient_descent(tx_train, y_train, tx_val, y_val):
+    """It performs training and evaluation of least squares with stochastic gradient descent."""
+
     print('\nTraining with Stochastic Gradient Descent')
     initial_w = np.zeros((tx_train.shape[1]))
     gamma = 0.005
     max_iter = 3000
 
-    # training
+    # Train the model
     w, _ = least_squares_SGD(y=y_train, tx=tx_train, initial_w=initial_w, max_iters=max_iter,
                              gamma=gamma, verbose=False)
 
-    # predictions
+    # Perform predictions
     y_pred = predict_labels(weights=w, data=tx_val, logistic=False)
 
+    # Evaluate
     evaluation = Evaluation(y_actual=y_val, y_pred=y_pred)
     acc = evaluation.get_accuracy()
     f1 = evaluation.get_f1()
@@ -52,12 +58,16 @@ def run_stochastic_gradient_descent(tx_train, y_train, tx_val, y_val):
 
 
 def run_least_squares(tx_train, y_train, tx_val, y_val):
+    """It performs training and evaluation of least squares with normal equations."""
+
     print('\nTraining with least squares')
+    # Train the model
     w, _ = least_squares(y=y_train, tx=tx_train)
 
-    # predictions
+    # Perform predictions
     y_pred = predict_labels(weights=w, data=tx_val, logistic=False)
 
+    # Evaluate
     evaluation = Evaluation(y_actual=y_val, y_pred=y_pred)
     acc = evaluation.get_accuracy()
     f1 = evaluation.get_f1()
@@ -67,14 +77,18 @@ def run_least_squares(tx_train, y_train, tx_val, y_val):
 
 
 def run_ridge_regression(tx_train, y_train, tx_val, y_val):
+    """It performs training and evaluation of ridge regression."""
+
     print('\nTraining with ridge regression')
     lambda_ = 1e-06
 
+    # Train the model
     w, _ = ridge_regression(y=y_train, tx=tx_train, lambda_=lambda_)
 
-    # predictions
+    # Perform predictions
     y_pred = predict_labels(weights=w, data=tx_val, logistic=False)
 
+    # Evaluate
     evaluation = Evaluation(y_actual=y_val, y_pred=y_pred)
     acc = evaluation.get_accuracy()
     f1 = evaluation.get_f1()
@@ -84,18 +98,22 @@ def run_ridge_regression(tx_train, y_train, tx_val, y_val):
 
 
 def run_logistic_regression(tx_train, y_train, tx_val, y_val):
-    s = '\nTraining with logistic regression '
-    print(s)
+    """It performs training and evaluation of logistic regression."""
+
+    print('\nTraining with logistic regression ')
+    # Initialize parameters
     initial_w = np.zeros((tx_train.shape[1]))
     gamma = 1e-6
     max_iter = 3000
 
+    # Train the model
     w, _ = logistic_regression(y=y_train, tx=tx_train, initial_w=initial_w, max_iters=max_iter,
                                gamma=gamma)
 
-    # predictions
+    # Perform predictions
     y_pred = predict_labels(weights=w, data=tx_val, logistic=True)
 
+    # Evaluate
     evaluation = Evaluation(y_actual=y_val, y_pred=y_pred)
     acc = evaluation.get_accuracy()
     f1 = evaluation.get_f1()
@@ -105,19 +123,23 @@ def run_logistic_regression(tx_train, y_train, tx_val, y_val):
 
 
 def run_regularized_logistic_regression(tx_train, y_train, tx_val, y_val):
-    s = '\nTraining with regularized logistic regression '
-    print(s)
+    """It performs training and evaluation of regularized logistic regression."""
+
+    print('\nTraining with regularized logistic regression ')
+    # Initialize parameters
     initial_w = np.zeros((tx_train.shape[1]))
     gamma = 1e-6
     max_iter = 1000
     lambda_ = 0.00001
 
+    # Train the model
     w, _ = reg_logistic_regression(y=y_train, tx=tx_train, initial_w=initial_w, max_iters=max_iter,
                                    gamma=gamma, lambda_=lambda_)
 
-    # predictions
+    # Perform predictions
     y_pred = predict_labels(weights=w, data=tx_val, logistic=True)
 
+    # Evaluate
     evaluation = Evaluation(y_actual=y_val, y_pred=y_pred)
     acc = evaluation.get_accuracy()
     f1 = evaluation.get_f1()
@@ -229,7 +251,7 @@ def main():
         results[jet] = res
 
     print('RESULTS:')
-    pprint(results)
+    print(results)
 
 
 if __name__ == '__main__':

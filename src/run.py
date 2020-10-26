@@ -14,9 +14,10 @@ def best_model_predictions(data_obj, jet, degrees):
     :param jet: int, the jet value
     :param degrees: int, the polynomial degree
     :return:
-        pred:
-        ids:
+        pred: np.array with the predicted labels
+        ids: np.array with the row index
     """
+    print('Training for Jet {jet}'.format(jet=jet))
     # Split data based on jet value for train and val datasets
     y, tx = get_jet_data_split(data_obj.y, data_obj.tx, jet)
     ids_test, tx_test = get_jet_data_split(data_obj.ids_test, data_obj.test, jet)
@@ -69,7 +70,7 @@ def main():
 
     # Change 0 label to -1
     preds_all = np.where(preds_all == 0, -1, preds_all)
-    OUTPUT_PATH = './../results/predictions/best_model_predictions_all.csv'
+    OUTPUT_PATH = './../results/predictions/best_model_predictions.csv'
 
     # Create submission
     create_csv_submission(ids_all, preds_all, OUTPUT_PATH)

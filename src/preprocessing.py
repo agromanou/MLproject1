@@ -6,16 +6,18 @@ Module description
 import numpy as np
 
 
-def get_jet_data_split(y, tx, group):
+def get_jet_data_split(y, tx, jet):
     """
     Given a group (jet number) returns the subset of y and tx
     corresponding to that group
     :param y: np.array with labels
     :param tx: np.array with features
-    :param group: int indicating jet number
+    :param jet: int, indicating jet number
     :return:
+        y_sub: np.array with the labels of the input jet
+        tx_sub: np.array with the features of the input jet
     """
-    inds = np.where(tx[:, 22] == group)
+    inds = np.where(tx[:, 22] == jet)
     tx_sub = tx[inds]
     y_sub = y[inds]
     return y_sub, tx_sub
@@ -91,21 +93,21 @@ class DataCleaning:
         extra column is created indicating where the values were imputed.
 
         :param tx: np.array with the features
-        :return tx: np.array with the features without missing values
-        :return tX_imputed: np.array with where values were imputed
+        :return:
+            tx: np.array with the features without missing values
+            tx_imputed: np.array with ones where values were imputed
         """
         iqr = self.q3 - self.q1
         inds = np.where(np.isnan(tx))
         tx[inds] = np.take(self.q3 + 1.5 * iqr, inds[1])
 
         # Creates dummies for imputed values
-        tX_imputed = np.zeros((tx.shape[0], tx.shape[1]))
+        tx_imputed = np.zeros((tx.shape[0], tx.shape[1]))
         array_one = np.ones(tx.shape[1])
-        tX_imputed[inds] = np.take(array_one, inds[1])
+        tx_imputed[inds] = np.take(array_one, inds[1])
         # Removes where no values were imputed
-        tX_imputed = tX_imputed[:, ~np.all(tX_imputed[1:] == tX_imputed[:-1],
-                                                                    axis=0)]
-        return tx, tX_imputed
+        tx_imputed = tx_imputed[:, ~np.all(tx_imputed[1:] == tx_imputed[:-1], axis=0)]
+        return tx, tx_imputed
 
     def standardize(self, tx):
         """
@@ -113,7 +115,8 @@ class DataCleaning:
         feature and the values are divided by the interquartile range.
 
         :param tx: np.array with the features
-        :return robust: np.array with the standardized features
+        :return:
+            robust: np.array with the standardized features
         """
         iqr = self.q3 - self.q1
         robust = (tx - self.median) / iqr
@@ -167,20 +170,18 @@ class FeatureEngineering:
     to be then used to transform the training and testing set.
     """
     def __init__(self):
-        self.top_features_list = None
         self.degree = None
-        self.number_interactions = None
         self.mean = None
         self.std = None
 
     def create_poly_features(self, tx, degree):
         """
-        Build a polynomial of a certain degree with crossed terms (applying sum, product and square of product)
+        Build a polynomial of a certain degree
 
-        :param tx: Features
-        :param degree: Degree of the polynomial (for each individual feature)
+        :param tx: np.array with the features
+        :param degree: int, the degree of the polynomial to be applied to each feature
         :return:
-            poly: Expanded features
+            poly: np.array with the expanded features
         """
         features = tx.shape[1]
         # Create powers for each of the features
@@ -191,24 +192,24 @@ class FeatureEngineering:
 
         poly = np.delete(poly, 0, 1)
 
-        poly = self.build_interractions(tx, poly)
+        poly = self.build_interactions(tx, poly)
         return poly
 
-    def build_interractions(self, tx, poly):
+    def build_interactions(self, tx, poly):
         """
         Build interactions between features sum, product and square of product
 
-        :param tx: Features
-        :param poly:
+        :param tx: np.array of the original features
+        :param poly: np.array with the features with polynomial feature expansion applied to them
         :return:
-            poly: Expanded features
+            interactions: np.array with the augmented features
         """
         features = tx.shape[1]
         for feat1 in range(features):
             for feat2 in range(feat1 + 1, features):
                 poly = np.c_[poly, tx[:, feat1] + tx[:, feat2],
-                             tx[:, feat1] * tx[:, feat2],
-                             np.power(tx[:, feat1] * tx[:, feat2], 2)]
+                                     tx[:, feat1] * tx[:, feat2],
+                                     np.power(tx[:, feat1] * tx[:, feat2], 2)]
         return poly
 
     def standardize(self, tx):
@@ -240,8 +241,8 @@ class FeatureEngineering:
         self.mean = np.mean(tx_poly, axis=0)
         self.std = np.std(tx_poly, axis=0)
 
-        tx_normalized = self.standardize(tx_poly)
-        return tx_normalized
+        tx_standardized = self.standardize(tx_poly)
+        return tx_standardized
 
     def transform(self, tx):
         """

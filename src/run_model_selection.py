@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 
-"""
-Module description
-"""
+import numpy as np
+
 from data_loader import DataLoader
-from preprocessing import *
+from preprocessing import FeatureEngineering, DataCleaning, get_jet_data_split
 from evaluation import Evaluation
-from proj1_helpers import *
-from implementations import *
+from proj1_helpers import predict_labels, settings_combinations
+from implementations import reg_logistic_regression
 
 
 def pipeline(tx_train, y_train, tx_val, y_val, degrees, gamma,
              lambda_, epochs, verbose):
+    """ Run the model training and evaluation on the given parameters """
 
     # Perform data cleaning (missing values, constant features, outliers, standardization)
     data_cleaner = DataCleaning()
@@ -37,6 +37,19 @@ def pipeline(tx_train, y_train, tx_val, y_val, degrees, gamma,
 
 
 def cross_validation(tx, y, folds, degrees, gamma, lambda_, epochs, verbose):
+    """
+    It performs k-fold cross validation of the models with the given input hyper-parameters
+
+    :param tx: np.array with the features
+    :param y: np.array with the labels
+    :param folds: int, the number of folds to perform in k-fold cross validation
+    :param degrees: int, the polynomial degree
+    :param gamma: float, the learning step
+    :param lambda_: float, the lambda penalized term
+    :param epochs: int, the number of iterations
+    :param verbose: boolean, whether to print detailed log or not
+    :return: scores of the performance  of the model
+    """
 
     f1_scores = []
     accuracy_scores = []
@@ -73,16 +86,8 @@ def model_selection(tx, y, verbose=False):
 
     # Hyper-parameters to test
     model_parameters = {
-        'degrees_list': list(np.linspace(1, 10, 10, dtype=int)),
-        'epochs': [100, 200, 500, 1000, 2000],
-        'folds': [3, 5, 10, 20],
-        'gamma': list(10. ** np.arange(-12, 3)),
-        'lambda': list(10. ** np.arange(-12, 3))
-    }
-
-    model_parameters = {
         'degrees_list': [6, 10],
-        'epochs': [3000],
+        'epochs': [1000],
         'folds': [5],
         'gamma': [1e-09, 1e-08, 1e-07, 1e-06],
         'lambda': [1e-09, 1e-08, 1e-07, 1e-06]
